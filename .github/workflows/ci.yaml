@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: jotrorox/setup-c3@v1
+
+    - name: Build project
+      run: c3c build calc3 -O2 -g0
+
+    - name: Run tests
+      run: c3c test -O2 -g0
