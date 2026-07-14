@@ -31,11 +31,11 @@
   "targets": {
     "calc3": {
       // Executable or library.
-      "type": "executable",
+      "type": "executable"
       // Additional libraries, sources
       // and overrides of global settings here.
       // "target": "linux-x64",
-    },
+    }
   },
   // Global settings.
   // CPU name, used for optimizations in the LLVM backend.
@@ -60,5 +60,5 @@
   "x86cpu": "native",
 
   // Enable sanitizer: none, address, memory, thread.
-  "sanitize": "none",
+  "sanitize": "none"
 }
