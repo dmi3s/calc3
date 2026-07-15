@@ -1,8 +1,17 @@
-module calc3;
+module calc3::main;
 import std::io;
+import calc3::token;
 
-fn int main(String[] args)
-{
-	io::printn("Hello, World!");
-	return 0;
+
+enum State : int {
+    WAITING,
+    RUNNING,
+    TERMINATED,
+}
+
+fn void main() {
+    State state = WAITING;
+    String name = state.description;
+    log::info("state.description: String = \"%s\"", name);
+    // State.
 }

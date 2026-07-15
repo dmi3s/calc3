@@ -8,22 +8,16 @@
 примере использования "свежего" языка программирования, для которого еще
 (относительно) мало примеров в сети.
 
-## Грамматика языка
-### Краткая справка по EBNF.
-
-
-> `{ X }` - 0 или более повторений `X`.
->
-> `[ X ]` - 0 или 1 повторение `X`.
->
-> `( X | Y )` - группировка альтернатив.
->
-> `,` - последовательность.
->
-> `;` - конец правила.
-
-
 ### Синтаксис калькуляттора
+
+<!--💡 **Краткая напоминалка по EBNF.**-->
+> [!NOTE] **Краткая напоминалка по EBNF.**
+> * `{ X }` - 0 или более повторений `X`.
+> * `[ X ]` - 0 или 1 повторение `X`.
+> * `( X | Y )` - группировка альтернатив.
+> * `,` - последовательность.
+> * `;` - конец правила.
+> * `(*...*)` - комментарий.
 
 ```ebnf
 expr = term , { ( "+" | "-" ) , term } ;
@@ -33,7 +27,7 @@ factor = integer | "(" , expr , ")" ;
 integer = [ sign ] , ( non_zero_integer | "0" ) ;
 non_zero_integer = non_zero_digit , { digit } ;
 sign   = "+" | "-" ;
-digit = "0" | digit_nz ;
+digit = "0" | non_zero_digit ;
 non_zero_digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 ```
@@ -45,7 +39,7 @@ non_zero_digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
   ```
 * Release версия
   ```bash
-  $ с3с build calc3 -02 -g0
+  $ с3с build calc3 -01 -g0
   ```
 * Запуск тестов
   ```bash
@@ -61,6 +55,17 @@ calc3/
 ├── tests/                      ── Тесты
 │   └── ...
 ├── project.json                ── Конфигурация проекта
+...
 ```
+## Ссылки для справки и изучения
+
+- [https://c3-lang.org/](https://c3-lang.org/) - главная страница о C3. Там есть:
+  - - [https://c3-lang.org/getting-started/introduction/](https://c3-lang.org/getting-started/introduction/) - документация.
+  - [https://c3-lang.org/blog/](https://c3-lang.org/blog/) - блог.
+- [https://github.com/c3lang/c3c](https://github.com/c3lang/c3c) - собственно, исходники c3c.
+- [https://github.com/c3lang/c3c/tree/master/lib/std](https://github.com/c3lang/c3c/tree/master/lib/std) - исходники стандартной библиотеки.
+- [https://deepwiki.com/c3lang/c3c/1-overview](https://deepwiki.com/c3lang/c3c/1-overview) - очень интересная wiki, есть много вещей, не вошедших в официальную документацию.
+  
+
 ## Лицензия
 Проект распространяется под лицензией MIT.

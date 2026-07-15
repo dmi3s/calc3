@@ -15,7 +15,7 @@ jobs:
     - uses: jotrorox/setup-c3@v1
 
     - name: Build project
-      run: c3c build calc3 -O2 -g0
+      run: c3c build calc3 -O1 -g0
 
     - name: Run tests
-      run: c3c test -O2 -g0
+      run: c3c test -g -O1 -D VMEM_TEMP
