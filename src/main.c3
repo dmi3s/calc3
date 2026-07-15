@@ -1,17 +1,10 @@
 module calc3::main;
-import std::io;
 import calc3::token;
 
 
-enum State : int {
-    WAITING,
-    RUNNING,
-    TERMINATED,
-}
-
 fn void main() {
-    State state = WAITING;
-    String name = state.description;
-    log::info("state.description: String = \"%s\"", name);
-    // State.
+    Token token_mul = token::new_token(TOKEN_MULTIPLY, 37u, 42u);
+    Token token_int = token::new_token_with_data(TOKEN_INTEGER, { .integer_value =42  }, 37u, 42u);
+    log::info("Token mul: %s", token_mul);
+    log::info("Token int: %s", token_int);
 }

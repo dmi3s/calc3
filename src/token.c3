@@ -1,10 +1,10 @@
 module calc3::token;
 import std::core::string;
-
+import std::io;
 
 enum TokenType : int {
     TOKEN_EOF,
-    TOKEN_NUMBER,
+    TOKEN_INTEGER,
     TOKEN_PLUS,
     TOKEN_MINUS,
     TOKEN_MULTIPLY,
@@ -13,40 +13,49 @@ enum TokenType : int {
     TOKEN_RPAREN,
 }
 
-struct Token {
+union TokenData {
+    int integer_value;
+}
+
+
+struct Token (Printable) {
     TokenType type;
-    String value; // ToDo: Посмотреть в сторону Any
-    String text; // оригинальный текст (для отладки). ToDo: Так ли он нужен?
+    TokenData data;
     uint line; // номер строки
     uint column; // номер столбца
 }
 
-macro Token new_token(TokenType type, String value,
-                   String text, uint line, uint column) {
+<*
+@require type != TOKEN_INTEGER
+*>
+fn Token new_token(TokenType type, uint line, uint column) {
     return (Token) {
         .type = type,
-        .value = value,
-        .text = text,
         .line = line,
         .column = column,
     };
 }
 
-macro String token_type_to_string(TokenType type) => type.description;
-
 <*
- This macro will create a temporary string description of a struct.
-
- @param token : "The token to create a description of"
+@require type == TOKEN_INTEGER
 *>
-macro String ttoken_to_string(Token token) => string::tfrom_struct(token);
+fn Token new_token_with_data(TokenType type, TokenData data,
+    uint line, uint column) {
+    return (Token) {
+        .type = type,
+        .data = data,
+        .line = line,
+        .column = column,
+    };
+}
 
-
-<*
- This macro will create a string description of a struct.
-
- @param [&inout] allocator : "The allocator to use"
- @param token : "The token to create a description of"
-*>
-macro String token_to_string(Allocator allocator, Token token) =>
-    string::from_struct(allocator, token);
+fn sz? Token.to_format(&self, Formatter* f) @dynamic {
+    switch(self.type) {
+        case TOKEN_INTEGER :
+            return f.printf("{ type: TOKEN_INTEGER, data: %d, %d:%d }",
+                self.data.integer_value, self.line, self.column);
+        default:
+            return f.printf("{ type: %s, %d:%d }",
+                self.type.description, self.line, self.column);
+    }
+}
