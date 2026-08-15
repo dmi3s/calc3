@@ -2,60 +2,54 @@ module calc3::token;
 import std::core::string;
 import std::io;
 
-enum TokenType : int {
-    TOKEN_EOF,
-    TOKEN_INTEGER,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_MULTIPLY,
-    TOKEN_DIVIDE,
-    TOKEN_LPAREN,
-    TOKEN_RPAREN,
+enum TokenKind : uint {
+    NUMBER,
+    LPAREN, RPAREN,
+    MUL, DIV, MOD,
+    PLUS, MINUS,
+    EOF,
 }
 
-union TokenData {
-    int integer_value;
+struct Ref {
+    int row;
+    int col;
 }
 
+fn bool Ref.equals(&self, Ref other) @operator(==) {
+    return self.row == other.row && self.col == other.col;
+}
+
+union Value {
+    int num;
+    char c;
+}
 
 struct Token (Printable) {
-    TokenType type;
-    TokenData data;
-    uint line; // номер строки
-    uint column; // номер столбца
+    TokenKind kind;
+    Value val;
+    Ref ref;
 }
 
-<*
-@require type != TOKEN_INTEGER
-*>
-fn Token new_token(TokenType type, uint line, uint column) {
-    return (Token) {
-        .type = type,
-        .line = line,
-        .column = column,
-    };
-}
-
-<*
-@require type == TOKEN_INTEGER
-*>
-fn Token new_token_with_data(TokenType type, TokenData data,
-    uint line, uint column) {
-    return (Token) {
-        .type = type,
-        .data = data,
-        .line = line,
-        .column = column,
-    };
+fn bool Token.equals(&self, Token other) @operator(==) {
+    if ( self.kind != other.kind || self.ref != other.ref ) {
+        return false;
+    }
+    if (self.kind == NUMBER) {
+        return self.val.num == other.val.num;
+    }
+    return self.val.c == other.val.c;
 }
 
 fn sz? Token.to_format(&self, Formatter* f) @dynamic {
-    switch(self.type) {
-        case TOKEN_INTEGER :
-            return f.printf("{ type: TOKEN_INTEGER, data: %d, %d:%d }",
-                self.data.integer_value, self.line, self.column);
+    switch (self.kind) {
+        case EOF:
+            return f.printf("{ %s, %d:%d }",
+                self.kind.description, self.ref.row, self.ref.col);
+        case NUMBER:
+            return f.printf("{ %s(%d), %d:%d }",
+                self.kind.description, self.val.num, self.ref.row, self.ref.col);
         default:
-            return f.printf("{ type: %s, %d:%d }",
-                self.type.description, self.line, self.column);
+            return f.printf("{ %s('%c'), %d:%d }",
+                self.kind.description, self.val.c, self.ref.row, self.ref.col);
     }
 }
