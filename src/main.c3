@@ -1,17 +1,20 @@
 module calc3::main;
-import calc3::token;
-import calc3::lexer;
+import calc3::ast;
 import calc3::parser;
-
+import std::collections::result;
+import std::core;
+import std::io;
 
 fn void main() {
     String src = "( 42 % 2 )\t\t-324";
     log::info("\"%s\"", src);
-    Lexer lex;
-    lex.init(src);
-    Token t;
-    do {
-        t = lex.next()!!;
-        log::info("%s", t);
-    } while (t.kind != EOF);
+    Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
+    if (r.is_ok)
+    {
+        io::print(ast::to_tree(r.value, tmem));
+    }
+    else
+    {
+        log::error("%s", r.error);
+    }
 }
