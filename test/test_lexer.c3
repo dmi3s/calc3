@@ -3,51 +3,45 @@ import calc3::lexer;
 import calc3::token;
 
 
-fn void test_empty() @test {
+macro Lexer @make_lexer(String init_str) @local {
     Lexer lex;
-    String test_string = "";
-    Token [*] expected_tokens = {
-        { .kind = EOF, .ref = {1, 1} }
-    };
-    lex.init(test_string);
+    lex.init(init_str);
+    return lex;
+}
+
+macro void @verify_tokens(#lex, #tokens) @local {
+    Token[*] expected_tokens = #tokens;
     foreach(Token* &tok : expected_tokens) {
-        Token? res = lex.next();
-        test::eq(res!!, *tok);
+        test::eq(#lex.next()!!, *tok);
     }
+}
+
+
+fn void test_empty() @test {
+    Lexer lex = @make_lexer("");
+    @verify_tokens(lex, {
+        { .kind = EOF, .ref = {1, 1} }
+    });
 }
 
 fn void test_empty_with_whitespaces() @test {
-    Lexer lex;
-    String test_string = "  \t\t\n ";
-    Token [*] expected_tokens = {
+    Lexer lex = @make_lexer("  \t\t\n ");
+    @verify_tokens(lex, {
         { .kind = EOF, .ref = {2, 2} }
-    };
-    lex.init(test_string);
-    foreach(Token* &tok : expected_tokens) {
-        Token? res = lex.next();
-        test::eq(res!!, *tok);
-    }
+    });
 }
 
 fn void test_number() @test {
-    Lexer lex;
-    String test_string = "12";
-    Token [*] expected_tokens = {
+    Lexer lex = @make_lexer("12");
+    @verify_tokens(lex, {
         { .kind = NUMBER, .val = {12}, .ref = {1,1} },
         { .kind = EOF, .ref = {1,3} }
-    };
-    lex.init(test_string);
-    foreach(Token* &tok : expected_tokens) {
-        Token? res = lex.next();
-        test::eq(res!!, *tok);
-    }
+    });
 }
 
 fn void test_simple() @test {
-    Lexer lex;
-
-    String test_string = "12 + 18 * 22 / 7 + 16 %3";
-    Token [*] expected_tokens = {
+    Lexer lex = @make_lexer("12 + 18 * 22 / 7 + 16 %3");
+    @verify_tokens(lex, {
         { .kind = NUMBER, .val = {12}, .ref = {1,1} },
         { .kind = PLUS, .val = {'+'}, .ref = {1,4} },
         { .kind = NUMBER, .val = {18}, .ref = {1,6} },
@@ -60,19 +54,12 @@ fn void test_simple() @test {
         { .kind = MOD, .val = {'%'}, .ref = {1,23} },
         { .kind = NUMBER, .val = {3}, .ref = {1,24} },
         { .kind = EOF, .ref = {1,25} }
-    };
-    lex.init(test_string);
-    foreach(Token* &tok : expected_tokens) {
-        Token? res = lex.next();
-        test::eq(res!!, *tok);
-    }
+    });
 }
 
 fn void test_complex() @test {
-    Lexer lex;
-
-    String test_string = "-18*22/(7+\n16 % 3)\n\t";
-    Token [*] expected_tokens = {
+    Lexer lex = @make_lexer("-18*22/(7+\n16 % 3)\n\t");
+    @verify_tokens(lex, {
         { .kind = MINUS, .val = {'-'}, .ref = {1,1} },
         { .kind = NUMBER, .val = {18}, .ref = {1,2} },
         { .kind = MUL, .val = {'*'}, .ref = {1,4} },
@@ -86,37 +73,38 @@ fn void test_complex() @test {
         { .kind = NUMBER, .val = {3}, .ref = {2,6} },
         { .kind = RPAREN, .val = {')'}, .ref = {2,7} },
         { .kind = EOF, .ref = {3,5} }
-    };
-    lex.init(test_string);
-    foreach(Token* &tok : expected_tokens) {
-        Token? res = lex.next();
-        test::eq(res!!, *tok);
-    }
+    });
 }
 
 fn void test_unknown() @test {
-    Lexer lex;
-    lex.init("@");
-    Token? res = lex.next();
+    Lexer lex = @make_lexer("@");
     test::@error(lex.next(), lexer::UNKNOWN_CHAR);
+    @verify_tokens(lex, {
+        { .kind = EOF, .ref = {1, 2} }
+    });
+}
+
+fn void test_unknown_continues() @test {
+    Lexer lex = @make_lexer("1@2");
+    @verify_tokens(lex, { { .kind = NUMBER, .val = {1}, .ref = {1, 1} } });
+    test::@error(lex.next(), lexer::UNKNOWN_CHAR);
+    @verify_tokens(lex, {
+        { .kind = NUMBER, .val = {2}, .ref = {1, 3} },
+        { .kind = EOF, .ref = {1, 4} }
+    });
 }
 
 fn void test_overflow() @test {
-    Lexer lex;
-    lex.init("2147483648");
+    Lexer lex = @make_lexer("2147483648");
     test::@error(lex.next(), lexer::OVERFLOW);
 }
 
 fn void test_overflow_consumes_digits() @test {
-    Lexer lex;
-    lex.init("2147483648+1");
+    Lexer lex = @make_lexer("2147483648+1");
     test::@error(lex.next(), lexer::OVERFLOW);
-    Token [*] expected_tokens = {
+    @verify_tokens(lex, {
         { .kind = PLUS, .val = {'+'}, .ref = {1, 11} },
         { .kind = NUMBER, .val = {1}, .ref = {1, 12} },
         { .kind = EOF, .ref = {1, 13} }
-    };
-    foreach(Token* &tok : expected_tokens) {
-        test::eq(lex.next()!!, *tok);
-    }
+    });
 }

@@ -99,6 +99,7 @@ fn Token? Lexer.next(&self) {
                 if (catch err = num) return err~;
                 return @mk_token(NUMBER, {num}, start);
             }
+            self.eat(); // Ready to continue
             return UNKNOWN_CHAR~;
     }
 }
