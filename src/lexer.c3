@@ -1,9 +1,10 @@
 module calc3::lexer;
 import std::core::string;
 import std::core::ascii;
+import std::math;
 import calc3::token;
 
-faultdef UNKNOWN_CHAR;
+faultdef UNKNOWN_CHAR, OVERFLOW;
 
 struct Lexer {
     String input;
@@ -49,10 +50,18 @@ fn void Lexer.skip_ws(&self) @inline {
     }
 }
 
-fn int Lexer.eat_int(&self) {
+fn int? Lexer.eat_int(&self) {
     int num = 0;
     while (!self.@is_eof() && ascii::@is_digit(self.peek())) {
-        num = num * 10 + self.eat() - '0';
+        int digit = self.eat() - '0';
+        int? next = num.overflow_mul(10).overflow_add(digit);
+        if (catch err = next) {
+            while (!self.@is_eof() && ascii::@is_digit(self.peek())) {
+                self.eat();
+            }
+            return OVERFLOW~;
+        }
+        num = next;
     }
     return num;
 }
@@ -86,7 +95,9 @@ fn Token? Lexer.next(&self) {
             return @mk_token(MOD, {self.eat()}, start);
         default:
             if (ascii::@is_digit(ch)) {
-                return @mk_token(NUMBER, {self.eat_int()}, start);
+                int? num = self.eat_int();
+                if (catch err = num) return err~;
+                return @mk_token(NUMBER, {num}, start);
             }
             return UNKNOWN_CHAR~;
     }
