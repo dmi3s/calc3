@@ -82,13 +82,22 @@ Polish notation. Not planned: recovery of the lexer/parser after errors.
 ```
 calc3/
 ├── .github/workflows/
-│   └── ci.yaml                 ── GitHub CI workflow
-├── src/                        ── Source code
-│   └── *.c3
-├── test/                       ── Tests
-│   └── *.c3
-├── project.json                ── Project configuration
-...
+│   └── ci.yaml                    ── CI: build and test on push/PR to main
+├── src/                           ── Source code
+│   ├── token.c3                   ── Tokens: kinds, value and position in the source
+│   ├── lexer.c3                   ── Lexer: source text → stream of tokens
+│   ├── ast.c3                     ── AST: tree nodes, interfaces and factories
+│   ├── parser.c3                  ── Parser: tokens → AST (recursive descent)
+│   └── main.c3                    ── Entry point: demonstration run
+├── test/                          ── Tests
+│   └── *.c3                       ── Unit tests for each module in src/
+├── resources/
+│   └── calc3-logo*.png            ── Project logo
+├── project.json                   ── Build configuration and settings (c3c)
+├── README.md                      ── Documentation in English
+├── README.ru.md                   ── Documentation in Russian
+├── README.zh.md                   ── Documentation in Chinese
+└── LICENSE                        ── MIT license
 ```
 
 # Reference and learning links

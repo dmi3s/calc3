@@ -78,13 +78,22 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 ```
 calc3/
 ├── .github/workflows/
-│   └── ci.yaml                 ── GitHub CI workflow
-├── src/                        ── 源代码
-│   └── *.c3
-├── test/                       ── 测试
-│   └── *.c3
-├── project.json                ── 项目配置
-...
+│   └── ci.yaml                    ── CI：在推送/PR 到 main 时构建并运行测试
+├── src/                           ── 源代码
+│   ├── token.c3                   ── Token：类型、值及其在源码中的位置
+│   ├── lexer.c3                   ── 词法分析器：源码文本 → 记号流
+│   ├── ast.c3                     ── AST：树节点、接口与工厂函数
+│   ├── parser.c3                  ── 语法分析器：Token → AST（递归下降）
+│   └── main.c3                    ── 程序入口：演示运行
+├── test/                          ── 测试
+│   └── *.c3                       ── 针对 src/ 中每个模块的单元测试
+├── resources/
+│   └── calc3-logo*.png            ── 项目 Logo
+├── project.json                   ── 构建配置与设置（c3c）
+├── README.md                      ── 英文文档
+├── README.ru.md                   ── 俄文文档
+├── README.zh.md                   ── 中文文档
+└── LICENSE                        ── MIT 许可证
 ```
 
 # 参考与学习链接
