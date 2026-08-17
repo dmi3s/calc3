@@ -2,22 +2,34 @@ module calc3::main;
 import calc3::ast;
 import calc3::parser;
 import std::collections::result;
-import std::core;
 import std::io;
 
+fn void process(String src)
+{
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
+        if (r.is_ok)
+        {
+            io::print(ast::to_rpn(r.value, tmem));
+            io::print("\n");
+        }
+        else
+        {
+            io::printf("error: %s\n", r.error);
+        }
+    };
+}
+
 fn void main() {
-    String src = "( 42 % 2 )\t\t-324";
-    log::info("\"%s\"", src);
-    Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
-    if (r.is_ok)
+    while (true)
     {
-        io::print(ast::to_tree(r.value, tmem));
-        io::print("\n");
-        io::print(ast::to_rpn(r.value, tmem));
-        io::print("\n");
-    }
-    else
-    {
-        log::error("%s", r.error);
+        String? line = io::treadline(io::stdin());
+        if (catch err = line)
+        {
+            if (err == io::EOF) break;
+            return;
+        }
+        process(line);
     }
 }
