@@ -19,9 +19,12 @@ fn bool Ref.equals(&self, Ref other) @operator(==) {
     return self.row == other.row && self.col == other.col;
 }
 
+alias ValueInt = int;
+alias ValueChar = char;
+
 union Value {
-    int num;
-    char c;
+    ValueInt num;
+    ValueChar c;
 }
 
 struct Token (Printable) {

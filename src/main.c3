@@ -1,6 +1,8 @@
 module calc3::main;
 import calc3::token;
 import calc3::lexer;
+import calc3::parser;
+
 
 fn void main() {
     String src = "( 42 % 2 )\t\t-324";
