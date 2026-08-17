@@ -1,3 +1,5 @@
+[English](README.md) | Русский | [中文](README.zh.md)
+
 # Calc3 — учебный проект калькулятора на C3
 
 <img src="resources/calc3-logo.png" alt="Calc3 logo" align="left"

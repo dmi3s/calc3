@@ -4,7 +4,7 @@ import calc3::lexer;
 
 fn void main() {
     String src = "( 42 % 2 )\t\t-324";
-    log::info("%s", src);
+    log::info("\"%s\"", src);
     Lexer lex;
     lex.init(src);
     Token t;
