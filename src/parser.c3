@@ -135,6 +135,10 @@ fn Result{ast::ASTNode, ParseError} parse(String src, Allocator allocator)
     Parser p;
     p.init(src, allocator);
     if (p.failed) return result::err(p.error);
+    if (p.current.kind == EOF)
+    {
+        return result::ok(ast::create_number(allocator, 0, p.current.ref));
+    }
     ast::ASTNode node = p.expression().@or_else(;r) { return r; };
     if (p.failed) return result::err(p.error);
     if (p.current.kind != EOF)

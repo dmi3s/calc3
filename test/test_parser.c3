@@ -104,12 +104,12 @@ fn void test_parse_error_trailing() @test {
     };
 }
 
-fn void test_parse_error_empty() @test {
+fn void test_parse_empty() @test {
     @pool()
     {
         Result{ast::ASTNode, parser::ParseError} res = parser::parse("", tmem);
-        test::@check(!(res.is_ok));
-        test::eq(res.error.msg, "Unexpected end of input");
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "NUMBER(0)");
     };
 }
 

@@ -12,6 +12,9 @@ fn void main() {
     if (r.is_ok)
     {
         io::print(ast::to_tree(r.value, tmem));
+        io::print("\n");
+        io::print(ast::to_rpn(r.value, tmem));
+        io::print("\n");
     }
     else
     {
