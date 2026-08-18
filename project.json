@@ -2,19 +2,21 @@
   // Language version of C3.
   "langrev": "1",
   // Warnings used for all targets.
-  "warnings": [ "no-unused" ],
+  "warnings": ["no-unused"],
   // Directories where C3 library files may be found.
-  "dependency-search-paths": [ "lib" ],
+  "dependency-search-paths": ["lib"],
   // Libraries to use for all targets.
-  "dependencies": [ ],
+  "dependencies": [],
   // Authors, optionally with email.
-  "authors": [ "Sergey (dmi3s) Dmitriev <dmi3evsv@gmail.com>" ],
+  "authors": [
+    "Sergey (dmi3s) Dmitriev <dmi3evsv@gmail.com>",
+  ],
   // Version using semantic versioning.
-  "version": "0.1.0",
+  "version": "0.1.2",
   // Sources compiled for all targets.
-  "sources": [ "src/**" ],
+  "sources": ["src/**"],
   // Test sources compiled for all targets.
-  "test-sources": [ "test/**" ],
+  "test-sources": ["test/**"],
   // C sources if the project also compiles C sources
   // relative to the project file.
   // "c-sources": [ "csource/**" ],
@@ -31,10 +33,10 @@
   "targets": {
     "calc3": {
       // Executable or library.
-      "type": "executable"
+      "type": "executable",
       // Additional libraries, sources
       // and overrides of global settings here.
-    }
+    },
   },
   // Global settings.
   // CPU name, used for optimizations in the LLVM backend.
@@ -60,5 +62,5 @@
 
   // Enable sanitizer: none, address, memory, thread.
   // "sanitize": "none"
-  "sanitize": "address"
+  "sanitize": "address",
 }
