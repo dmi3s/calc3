@@ -51,6 +51,9 @@ fn String RPNVisitor.to_string(&self)
     return self.ctx.out.str_view().trim_right(" ");
 }
 
+<*
+ @require root != null : "Root node must not be null"
+*>
 fn String to_rpn(ASTNode root, Allocator allocator)
 {
     RPNVisitor v = make_rpn_visitor(allocator);

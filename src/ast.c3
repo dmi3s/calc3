@@ -66,6 +66,9 @@ fn sz? ASTBinary.to_format(&self, Formatter* f) @dynamic
     return f.printf("(%s %s %s)", self.left, op_symbol(self.op), self.right);
 }
 
+<*
+ @require op == token::TokenKind.PLUS || op == token::TokenKind.MINUS || op == token::TokenKind.MUL || op == token::TokenKind.DIV || op == token::TokenKind.MOD : "Not a binary operator"
+*>
 fn String op_symbol(token::TokenKind op) {
     switch (op) {
         case PLUS: return "+";

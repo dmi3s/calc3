@@ -129,6 +129,9 @@ fn void EvalVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     self.apply_binary(node.op, left, right, node.ref);
 }
 
+<*
+ @require root != null : "Root node must not be null"
+*>
 fn Result{int, EvalError} eval(ASTNode root, Allocator allocator)
 {
     EvalVisitor v = make_eval_visitor(allocator);

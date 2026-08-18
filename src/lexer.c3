@@ -18,17 +18,17 @@ fn void Lexer.init(&self, String input) {
     self.pos = 0;
 }
 
+<*
+ @require !self.@is_eof() : "peek: Can't peek at eof"
+*>
 fn char Lexer.peek(&self) {
-    if (self.@is_eof()) {
-        unreachable("peek: Can't peek at eof");
-    }
     return self.input[self.pos];
 }
 
+<*
+ @require !self.@is_eof() : "eat: Can't eat at eof"
+*>
 fn char Lexer.eat(&self) {
-    if (self.@is_eof()) {
-        unreachable("eat: Can't eat at eof");
-    }
     if (self.input[self.pos] == '\n') {
         self.ref.row += 1;
         self.ref.col = 1;
