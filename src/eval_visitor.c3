@@ -3,6 +3,7 @@ import calc3::token;
 import std::collections::result;
 import std::core;
 import std::io;
+import std::math;
 
 struct EvalError (Printable)
 {
@@ -51,7 +52,69 @@ fn void EvalVisitor.visit_unary(&self, ASTUnary* node) @dynamic
     if (self.ctx.failed) return;
     if (node.op == token::TokenKind.MINUS)
     {
+        if (self.ctx.result == int::min)
+        {
+            self.fail(node.ref, "Integer overflow");
+            return;
+        }
         self.ctx.result = -self.ctx.result;
+    }
+}
+
+fn bool EvalVisitor.apply_binary(&self, token::TokenKind op, int left, int right, token::Ref ref)
+{
+    switch (op)
+    {
+        case token::TokenKind.PLUS:
+        {
+            int? res = left.overflow_add(right);
+            if (catch err = res)
+            {
+                self.fail(ref, "Integer overflow");
+                return false;
+            }
+            self.ctx.result = res;
+            return true;
+        }
+        case token::TokenKind.MINUS:
+        {
+            int? res = left.overflow_sub(right);
+            if (catch err = res)
+            {
+                self.fail(ref, "Integer overflow");
+                return false;
+            }
+            self.ctx.result = res;
+            return true;
+        }
+        case token::TokenKind.MUL:
+        {
+            int? res = left.overflow_mul(right);
+            if (catch err = res)
+            {
+                self.fail(ref, "Integer overflow");
+                return false;
+            }
+            self.ctx.result = res;
+            return true;
+        }
+        case token::TokenKind.DIV:
+        case token::TokenKind.MOD:
+            if (right == 0)
+            {
+                self.fail(ref, "Division by zero");
+                return false;
+            }
+            if (left == int::min && right == -1)
+            {
+                self.fail(ref, "Integer overflow");
+                return false;
+            }
+            self.ctx.result = op == token::TokenKind.DIV ? left / right : left % right;
+            return true;
+        default:
+            self.fail(ref, "Unknown operator");
+            return false;
     }
 }
 
@@ -63,31 +126,7 @@ fn void EvalVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     node.right.accept(self);
     if (self.ctx.failed) return;
     int right = self.ctx.result;
-    switch (node.op)
-    {
-        case token::TokenKind.PLUS:
-            self.ctx.result = left + right;
-        case token::TokenKind.MINUS:
-            self.ctx.result = left - right;
-        case token::TokenKind.MUL:
-            self.ctx.result = left * right;
-        case token::TokenKind.DIV:
-            if (right == 0)
-            {
-                self.fail(node.ref, "Division by zero");
-                return;
-            }
-            self.ctx.result = left / right;
-        case token::TokenKind.MOD:
-            if (right == 0)
-            {
-                self.fail(node.ref, "Division by zero");
-                return;
-            }
-            self.ctx.result = left % right;
-        default:
-            self.fail(node.ref, "Unknown operator");
-    }
+    self.apply_binary(node.op, left, right, node.ref);
 }
 
 fn Result{int, EvalError} eval(ASTNode root, Allocator allocator)

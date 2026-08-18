@@ -141,3 +141,61 @@ fn void test_eval_division_by_zero_nested() @test {
         eval_err("(1 + 2) / (3 - 3)");
     };
 }
+
+fn void test_eval_overflow_add() @test {
+    @pool()
+    {
+        eval_err("2147483647 + 1");
+    };
+}
+
+fn void test_eval_overflow_sub() @test {
+    @pool()
+    {
+        eval_err("2147483647 - -1");
+    };
+}
+
+fn void test_eval_overflow_mul() @test {
+    @pool()
+    {
+        eval_err("1000000 * 1000000");
+    };
+}
+
+fn void test_eval_overflow_unary() @test {
+    @pool()
+    {
+        eval_err("-(-2147483647 - 1)");
+    };
+}
+
+fn void test_eval_overflow_div() @test {
+    @pool()
+    {
+        eval_err("(-2147483647 - 1) / -1");
+    };
+}
+
+fn void test_eval_overflow_mod() @test {
+    @pool()
+    {
+        eval_err("(-2147483647 - 1) % -1");
+    };
+}
+
+fn void test_eval_int_min() @test {
+    @pool()
+    {
+        test::eq(eval_ok("-2147483647 - 1"), -2147483647 - 1);
+    };
+}
+
+fn void test_eval_overflow_boundaries() @test {
+    @pool()
+    {
+        test::eq(eval_ok("2147483647 * -1"), -2147483647);
+        test::eq(eval_ok("-2147483647 / -1"), 2147483647);
+        test::eq(eval_ok("1000 * 1000"), 1000000);
+    };
+}
