@@ -54,8 +54,8 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 # Current state
 
-The project is at an early stage: the main building blocks are implemented, but the final goals
-(outputting reverse Polish notation, evaluating expressions) are still ahead.
+The project implements the formal goal: tokenizer, parser, AST construction and tree
+traversal — both to output reverse Polish notation and to evaluate expressions.
 
 - **Tokens** — `src/token.c3`: token kinds (number, operators, parentheses, end of input),
   the token's value and its position in the source.
@@ -66,16 +66,23 @@ The project is at an early stage: the main building blocks are implemented, but 
   planned.
 - **AST** — `src/ast.c3`: an abstract syntax tree with three kinds of nodes —
   a number, a unary and a binary operation. Nodes can accept a visitor and be printed.
-- **Visitors** — `src/ast.c3`: the Visitor pattern for tree traversal; for now there is
-  a demonstration visitor that prints nodes.
+- **Visitors** — the Visitor pattern for tree traversal:
+  - `src/ast.c3` — a demonstration visitor that prints nodes;
+  - `src/ast_tree.c3` — `ast::to_tree()`: renders the AST as a tree (eza -T style);
+  - `src/rpn_visitor.c3` — `ast::to_rpn()`: outputs reverse Polish notation
+    (unary minus — `NEG`, unary plus — `POS`);
+  - `src/eval_visitor.c3` — `ast::eval()`: evaluates the expression. Returns
+    `Result{int, EvalError}`: division/modulo by zero, integer overflow
+    (including `INT_MIN / -1` and `-INT_MIN`) produce an error with a position.
 - **Parser** — `src/parser.c3`: recursive descent over the grammar (see above) respecting
   precedence and associativity; builds the AST, supports unary operators and parentheses.
   Errors are returned together with a description and position.
-- **Tests** — `test/`: unit tests for the lexer, AST and parser (27 tests).
-  Run with `c3c test calc3`.
+- **Entry point** — `src/main.c3`: reads expressions from stdin and prints, for each line,
+  the RPN and the evaluated value (or an error message). In response to "?" it prints 42.
+- **Tests** — `test/`: unit tests for the lexer, AST, parser, eval and the entry point
+  (67 tests). Run with `c3c test calc3`.
 
-Not done yet (but planned): evaluating expressions and outputting the result in reverse
-Polish notation. Not planned: recovery of the lexer/parser after errors.
+Not planned: recovery of the lexer/parser after errors.
 
 # Project structure
 
@@ -87,8 +94,11 @@ calc3/
 │   ├── token.c3                   ── Tokens: kinds, value and position in the source
 │   ├── lexer.c3                   ── Lexer: source text → stream of tokens
 │   ├── ast.c3                     ── AST: tree nodes, interfaces and factories
+│   ├── ast_tree.c3                ── Visitor: AST → tree (eza -T style)
+│   ├── rpn_visitor.c3             ── Visitor: AST → reverse Polish notation
+│   ├── eval_visitor.c3            ── Visitor: AST → expression value
 │   ├── parser.c3                  ── Parser: tokens → AST (recursive descent)
-│   └── main.c3                    ── Entry point: demonstration run
+│   └── main.c3                    ── Entry point: reads expressions from stdin
 ├── test/                          ── Tests
 │   └── *.c3                       ── Unit tests for each module in src/
 ├── resources/
