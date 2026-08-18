@@ -13,6 +13,15 @@ fn void process(String src)
         {
             io::print(ast::to_rpn(r.value, tmem));
             io::print("\n");
+            Result{int, ast::EvalError} res = ast::eval(r.value, tmem);
+            if (res.is_ok)
+            {
+                io::printf("%d\n", res.value);
+            }
+            else
+            {
+                io::printf("error: %s\n", res.error);
+            }
         }
         else
         {
