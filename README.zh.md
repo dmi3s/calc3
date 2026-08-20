@@ -2,7 +2,7 @@
 
 # Calc3 — 基于 C3 语言的入门计算器项目
 
-<img src="resources/calc3-logo.png" alt="Calc3 logo" align="left"
+<img src="resources/calc3_logo.png" alt="Calc3 logo" align="left"
      style="float:left; width:160px; height:auto; margin: 0 16px 12px 0;"/>
 <div style="clear: both;"></div>
 <b>正式目标</b>——定义文法、实现词法分析器（tokenizer）和语法分析器（parser），
@@ -98,7 +98,7 @@ calc3/
 ├── test/                          ── 测试
 │   └── *.c3                       ── 针对 src/ 中每个模块的单元测试
 ├── resources/
-│   └── calc3-logo*.png            ── 项目 Logo
+│   └── calc3_logo*.png             ── 项目 Logo
 ├── project.json                   ── 构建配置与设置（c3c）
 ├── README.md                      ── 英文文档
 ├── README.ru.md                   ── 俄文文档

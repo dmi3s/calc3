@@ -2,7 +2,7 @@
 
 # Calc3 — учебный проект калькулятора на C3
 
-<img src="resources/calc3-logo.png" alt="Calc3 logo" align="left"
+<img src="resources/calc3_logo.png" alt="Calc3 logo" align="left"
      style="float:left; width:160px; height:auto; margin: 0 16px 12px 0;"/>
 <div style="clear: both;"></div>
 <b>Формальная цель</b> проекта - определить грамматику, реализовать токенизатор и парсер.
@@ -102,7 +102,7 @@ calc3/
 ├── test/                          ── Тесты
 │   └── *.c3                       ── Модульные тесты на каждый модуль src/
 ├── resources/
-│   └── calc3-logo*.png            ── Логотип проекта
+│   └── calc3_logo*.png             ── Логотип проекта
 ├── project.json                   ── Конфигурация и настройки сборки (c3c)
 ├── README.md                      ── Документация на английском
 ├── README.ru.md                   ── Документация на русском
