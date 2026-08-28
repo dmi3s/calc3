@@ -30,8 +30,40 @@ fn void process(String src)
 {
     @pool()
     {
-        io::print(process_line(src, tmem));
-        io::print("\n");
+        if (src.len == 1 && src == "?")
+        {
+            io::print("Result:\n42\n");
+            return;
+        }
+        Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
+        if (r.is_ok)
+        {
+            io::print("=== AST (Abstract syntax tree) ===\n");
+            io::print(ast::to_tree(r.value, tmem));
+            io::print("\n");
+
+            String rpn = ast::to_rpn(r.value, tmem);
+            io::print("=== RPN (Reverse Polish notation) ===\n");
+            io::print(rpn);
+            io::print("\n\n");
+
+            Result{int, ast::EvalError} res = ast::eval(r.value, tmem);
+            io::print("=== Result (Eval) ===\n");
+            if (res.is_ok)
+            {
+                io::print(string::tformat("%d", res.value));
+            }
+            else
+            {
+                io::print(string::tformat("error: %s", res.error));
+            }
+            io::print("\n");
+        }
+        else
+        {
+            io::print(string::tformat("error: %s", r.error));
+            io::print("\n");
+        }
     };
 }
 
