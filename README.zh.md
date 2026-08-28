@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:85016ebf84ec9ef91848f6621dfc836e1ef81704a79690a926bc5864b80a0c51 -->
+<!-- source-hash: sha256:8dd1695cb623b31c6a45c6c42053ecdd4b3268fde2523cef22d3ec6a981cdac1 -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -151,6 +151,10 @@ calc3/
 │   └── *.c3                       ── 针对 src/ 中每个模块的单元测试
 ├── resources/
 │   └── calc3_logo*.png             ── 项目 Logo
+├── docs/                          ── 图表与文档源文件
+│   ├── architecture.*             ── 架构：Typst（.ru/.zh 为译文）、D2、SVG、PDF
+│   ├── parser_ast.*               ── 词法分析与解析为 AST（D2 → SVG）
+│   └── pipeline.*                 ── 流水线：文本 → 词法分析器 → … → RPN/Eval（D2 → SVG，用于 README）
 ├── project.json                   ── 构建配置与设置（c3c）
 ├── README.md                      ── 英文文档
 ├── README.ru.md                   ── 俄文文档

@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:85016ebf84ec9ef91848f6621dfc836e1ef81704a79690a926bc5864b80a0c51 -->
+<!-- source-hash: sha256:8dd1695cb623b31c6a45c6c42053ecdd4b3268fde2523cef22d3ec6a981cdac1 -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -156,6 +156,10 @@ calc3/
 │   └── *.c3                       ── Unit tests for each module in src/
 ├── resources/
 │   └── calc3_logo*.png             ── Project logo
+├── docs/                          ── Diagrams and documentation sources
+│   ├── architecture.*             ── Architecture: Typst (.ru/.zh — translations), D2, SVG, PDF
+│   ├── parser_ast.*               ── Tokenization and parsing into AST (D2 → SVG)
+│   └── pipeline.*                 ── Pipeline text → lexer → … → RPN/Eval (D2 → SVG, in README)
 ├── project.json                   ── Build configuration and settings (c3c)
 ├── README.md                      ── Documentation in English
 ├── README.ru.md                   ── Documentation in Russian
