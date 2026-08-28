@@ -1,3 +1,4 @@
+<!-- source-hash: sha256:b6f4a5dd1614d554a475efdffc75eb90429b9133bc8f98912374caabcdb2307d -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -150,6 +151,36 @@ calc3/
 - [https://deepwiki.com/c3lang/c3c/1-overview](https://deepwiki.com/c3lang/c3c/1-overview) - a very interesting wiki, it has many things not included in the official documentation. **The most important thing** - a (possibly specially fine-tuned) **Devin model** has been attached to the search there, and it answers questions about the C3 language and standard library very well. Both deepseek and chatgpt are good, but generic models. And they know C3 only so-so. But Devin explains everything on the site, and if necessary, shows the sources directly. Very impressed.
 - [https://github.com/c3lang/c3-showcase](https://github.com/c3lang/c3-showcase) - a collection of projects in C3.
 - [https://zed.dev/](https://zed.dev/) - a modern IDE that ships with several LLM - Free (or conditionally Free) models, and stands out from VS Code with its greatly increased speed. Its overall concept is more or less similar to VS Code.
+
+## Syncing translations
+
+The documentation source is `README.ru.md`. The translations `README.md`
+(English) and `README.zh.md` (Chinese) must correspond to it. To track drift,
+each translation embeds a hidden HTML comment with the sha256 of the source
+at the top:
+
+```text
+<!-- source-hash: sha256:<64 hex> -->
+```
+
+The script `scripts/check_readme_sync` compares the current hash of
+`README.ru.md` with the one embedded in the translations. Modes:
+- (default) — non-blocking hint, always `exit 0`;
+- `--update` — rewrites the markers in the translations with the current hash;
+- `--strict` — fails (`exit 1`) if the translations do not correspond to the
+  source (used in CI as a test).
+
+Workflow when editing the source:
+1. Edit `README.ru.md`.
+2. `git commit` — the `pre-commit` hook reminds you (warning) but does not
+   block the commit.
+3. Manually update the translations `README.md` and `README.zh.md`.
+4. Run `scripts/check_readme_sync --update` to refresh the markers.
+5. Verify: `scripts/check_readme_sync --strict` (should print `OK`).
+6. `git push` — the CI `--strict` step checks correspondence.
+
+Note: the marker only reflects that the source changed, not translation
+quality; run `--update` only after actually updating the translations.
 
 # License
 

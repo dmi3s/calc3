@@ -1,3 +1,4 @@
+<!-- source-hash: sha256:b6f4a5dd1614d554a475efdffc75eb90429b9133bc8f98912374caabcdb2307d -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -145,6 +146,33 @@ calc3/
 - [https://deepwiki.com/c3lang/c3c/1-overview](https://deepwiki.com/c3lang/c3c/1-overview) - 一个非常有意思的 wiki，包含很多官方文档没有的内容。**最重要的是**——那里给搜索接上了（可能是专门微调过的）**Devin 模型**，它对 C3 语言和标准库的问题回答得非常好。deepseek 和 chatgpt 都不错，但它们是通用模型，对 C3 的了解也就一般。而 Devin 在网站上解释一切，必要时还能直接展示源码。印象非常深刻。
 - [https://github.com/c3lang/c3-showcase](https://github.com/c3lang/c3-showcase) - C3 项目集锦。
 - [https://zed.dev/](https://zed.dev/) - 一款现代 IDE，自带多个 LLM——Free（或条件性 Free）模型，与 VS Code 相比显著更快。其整体理念与 VS Code 大致相似。
+
+## 翻译同步
+
+文档的源头是 `README.ru.md`。翻译文件 `README.md`（英文）和 `README.zh.md`
+（中文）必须与其保持一致。为了追踪偏差，每个翻译文件在开头嵌入了一段隐藏的
+HTML 注释，包含源文件的 sha256：
+
+```text
+<!-- source-hash: sha256:<64 hex> -->
+```
+
+脚本 `scripts/check_readme_sync` 会将 `README.ru.md` 的当前哈希值与翻译文件
+中嵌入的哈希值进行比较。模式：
+- （默认）— 不阻塞的提示，始终 `exit 0`；
+- `--update` — 用当前哈希值重写翻译文件中的标记；
+- `--strict` — 若翻译与源文件不一致则失败（`exit 1`，在 CI 中作为测试使用）。
+
+编辑源文件时的工作流：
+1. 编辑 `README.ru.md`。
+2. `git commit` — `pre-commit` 钩子会提醒你（warning），但不会阻止提交。
+3. 手动更新翻译文件 `README.md` 和 `README.zh.md`。
+4. 运行 `scripts/check_readme_sync --update` 以刷新标记。
+5. 校验：`scripts/check_readme_sync --strict`（应显示 `OK`）。
+6. `git push` — CI 的 `--strict` 步骤会检查一致性。
+
+注意：标记仅反映源文件是否改动，而不反映翻译质量；请务必在真正更新翻译
+之后才运行 `--update`。
 
 # 许可证
 

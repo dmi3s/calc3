@@ -1,0 +1,7 @@
+#!/bin/sh
+# Non-blocking hint: warn (but never block) if README translations are out of
+# sync with the source README.ru.md. Run scripts/check_readme_sync --update
+# after syncing a translation to refresh its embedded source-hash marker.
+ROOT="$(git rev-parse --show-toplevel)"
+"$ROOT/scripts/check_readme_sync" || true
+exit 0

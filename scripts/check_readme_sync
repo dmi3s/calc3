@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Check that README translations are in sync with the source README.ru.md.
+
+The source of truth is README.ru.md. Each translation (README.md = English,
+README.zh.md = Chinese) embeds a hidden HTML comment carrying the sha256 of the
+source file at the moment it was last synced:
+
+    <!-- source-hash: sha256:<64 hex chars> -->
+
+This script compares the current sha256 of README.ru.md with the embedded hash.
+A mismatch means the translation is (possibly) out of date.
+
+This is a *hint* only by default: the script exits 0, so it never blocks a
+commit or a CI run. Use --update to refresh the embedded hashes once a
+translation has been brought up to date with the source.
+
+With --strict the script becomes a real test: it exits 1 when any translation
+is out of sync with the source, so it can fail a CI build or a test run.
+"""
+import hashlib
+import os
+import re
+import sys
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SOURCE = "README.ru.md"
+TRANSLATIONS = ["README.md", "README.zh.md"]
+HASH_RE = re.compile(r"<!--\s*source-hash:\s*sha256:([0-9a-fA-F]{64})\s*-->")
+
+
+def sha256(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def insert_or_replace_hash(text, current):
+    marker = "<!-- source-hash: sha256:{} -->".format(current)
+    if HASH_RE.search(text):
+        return HASH_RE.sub(lambda m: marker, text, count=1)
+    lines = text.split("\n")
+    lines.insert(0, marker)
+    return "\n".join(lines)
+
+
+def main(argv):
+    update = "--update" in argv[1:]
+    strict = "--strict" in argv[1:]
+    source_path = os.path.join(REPO_ROOT, SOURCE)
+    if not os.path.exists(source_path):
+        print("check_readme_sync: source {} not found at {}".format(SOURCE, source_path),
+              file=sys.stderr)
+        return 0
+    current = sha256(source_path)
+
+    stale = []
+    for rel in TRANSLATIONS:
+        path = os.path.join(REPO_ROOT, rel)
+        if not os.path.exists(path):
+            print("check_readme_sync: translation {} not found, skipped".format(rel))
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+        m = HASH_RE.search(text)
+        if not m:
+            print("check_readme_sync: WARNING: {} has no source-hash marker; "
+                  "sync tracking not set up.".format(rel))
+            stale.append(rel)
+            continue
+        if m.group(1).lower() != current:
+            stale.append(rel)
+
+    if not stale:
+        if update:
+            print("check_readme_sync: all translations already match the source hash.")
+        else:
+            print("check_readme_sync: OK - translations are in sync with "
+                  "README.ru.md (source).")
+        return 0
+
+    print("check_readme_sync: WARNING - translations may be out of sync with "
+          "README.ru.md (source).")
+    print("  source hash (README.ru.md): sha256:{}".format(current))
+    for rel in stale:
+        path = os.path.join(REPO_ROOT, rel)
+        if update:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+            text = insert_or_replace_hash(text, current)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            print("  updated {} -> sha256:{}".format(rel, current))
+        else:
+            print("  stale: {} (run: scripts/check_readme_sync --update "
+                  "after syncing)".format(rel))
+
+    if strict:
+        print("check_readme_sync: FAILED - translations are out of sync "
+              "(strict mode).")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
