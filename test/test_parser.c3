@@ -154,6 +154,33 @@ fn void test_parse_call_no_args() @test {
     {
         Result{ast::ASTNode, parser::ParseError} res = parser::parse("ask()", tmem);
         test::@check(res.is_ok);
-        test::eq(string::tformat("%s", res.value), "(ask NUMBER(0))");
+        test::eq(string::tformat("%s", res.value), "(ask)");
+    };
+}
+
+fn void test_parse_func_multi_param() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("fn int add(int a, int b) { a + b }", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(fn add(a,b) (IDENT(a) + IDENT(b)))");
+    };
+}
+
+fn void test_parse_call_multi_arg() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("add(2, 3)", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(add NUMBER(2) NUMBER(3))");
+    };
+}
+
+fn void test_parse_func_unsupported_type() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("fn float f(int a) { a }", tmem);
+        test::@check(!res.is_ok);
+        test::eq(string::tformat("%s", res.error.msg), "Unsupported type 'float'");
     };
 }

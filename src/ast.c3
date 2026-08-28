@@ -1,5 +1,7 @@
 module calc3::ast;
 import calc3::token;
+import calc3::symbol_table;
+import std::core;
 import std::io;
 
 interface ASTVisitor
@@ -107,7 +109,9 @@ struct ASTFunDef (ASTNode, Printable)
 {
     token::Ref ref;
     String name;
-    String param;
+    symbol_table::Type ret_type;
+    symbol_table::Param[16] params;
+    usz param_count;
     ASTNode body;
 }
 
@@ -118,14 +122,21 @@ fn void ASTFunDef.accept(&self, ASTVisitor visitor) @dynamic
 
 fn sz? ASTFunDef.to_format(&self, Formatter* f) @dynamic
 {
-    return f.printf("(fn %s(%s) %s)", self.name, self.param, self.body);
+    (void)f.printf("(fn %s(", self.name);
+    for (sz i = 0; i < (sz)self.param_count; i++)
+    {
+        if (i > 0) (void)f.printf(",");
+        (void)f.printf("%s", self.params[i].name);
+    }
+    return f.printf(") %s)", self.body);
 }
 
 struct ASTCall (ASTNode, Printable)
 {
     token::Ref ref;
     String name;
-    ASTNode arg;
+    ASTNode[16] args;
+    usz argc;
 }
 
 fn void ASTCall.accept(&self, ASTVisitor visitor) @dynamic
@@ -135,7 +146,13 @@ fn void ASTCall.accept(&self, ASTVisitor visitor) @dynamic
 
 fn sz? ASTCall.to_format(&self, Formatter* f) @dynamic
 {
-    return f.printf("(%s %s)", self.name, self.arg);
+    (void)f.printf("(%s", self.name);
+    for (sz i = 0; i < (sz)self.argc; i++)
+    {
+        (void)f.printf(" ");
+        (void)f.printf("%s", self.args[i]);
+    }
+    return f.printf(")");
 }
 
 <*
@@ -188,19 +205,21 @@ fn ASTNode create_let(Allocator allocator, String name, ASTNode value, token::Re
     return (ASTNode)node;
 }
 
-fn ASTNode create_fundef(Allocator allocator, String name, String param, ASTNode body, token::Ref ref)
+fn ASTNode create_fundef(Allocator allocator, String name, symbol_table::Type ret_type, symbol_table::Param* params, usz param_count, ASTNode body, token::Ref ref)
 {
     ASTFunDef* node = alloc::new(allocator, ASTFunDef, {
-        .ref = ref, .name = name, .param = param, .body = body
+        .ref = ref, .name = name, .ret_type = ret_type, .param_count = param_count, .body = body
     });
+    for (sz i = 0; i < (sz)param_count; i++) node.params[i] = params[i];
     return (ASTNode)node;
 }
 
-fn ASTNode create_call(Allocator allocator, String name, ASTNode arg, token::Ref ref)
+fn ASTNode create_call(Allocator allocator, String name, ASTNode* args, usz argc, token::Ref ref)
 {
     ASTCall* node = alloc::new(allocator, ASTCall, {
-        .ref = ref, .name = name, .arg = arg
+        .ref = ref, .name = name, .argc = argc
     });
+    for (sz i = 0; i < (sz)argc; i++) node.args[i] = args[i];
     return (ASTNode)node;
 }
 
@@ -242,12 +261,12 @@ fn void ASTestVisitor.visit_let(&self, ast::ASTLet* node) @dynamic
 
 fn void ASTestVisitor.visit_fundef(&self, ast::ASTFunDef* node) @dynamic
 {
-    io::printf("FunDef \"%s(%s)\":\n", node.name, node.param);
+    io::printf("FunDef \"%s\":\n", node.name);
     node.body.accept(self);
 }
 
 fn void ASTestVisitor.visit_call(&self, ast::ASTCall* node) @dynamic
 {
     io::printf("Call \"%s\":\n", node.name);
-    node.arg.accept(self);
+    foreach (a : node.args) a.accept(self);
 }

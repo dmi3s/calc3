@@ -7,6 +7,7 @@ enum TokenKind : uint {
     IDENT,
     LPAREN, RPAREN,
     LBRACE, RBRACE,
+    COMMA,
     EQ,
     MUL, DIV, MOD,
     PLUS, MINUS,

@@ -105,8 +105,8 @@ fn void ASTreeVisitor.visit_let(&self, ASTLet* node) @dynamic
 
 fn void ASTreeVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
 {
-    self.append_line(string::tformat("FN(%s,%s) (%d:%d)",
-        node.name, node.param, node.ref.row, node.ref.col));
+    self.append_line(string::tformat("FN(%s) (%d:%d)",
+        node.name, node.ref.row, node.ref.col));
     self.reserve_ancestors();
     if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
     self.ctx.depth++;
@@ -122,8 +122,11 @@ fn void ASTreeVisitor.visit_call(&self, ASTCall* node) @dynamic
     self.reserve_ancestors();
     if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
     self.ctx.depth++;
-    self.ctx.is_last = true;
-    node.arg.accept(self);
+    for (sz i = 0; i < (sz)node.argc; i++)
+    {
+        self.ctx.is_last = (i == (sz)node.argc - 1);
+        node.args[i].accept(self);
+    }
     self.ctx.depth--;
 }
 

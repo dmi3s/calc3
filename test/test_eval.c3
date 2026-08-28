@@ -289,3 +289,25 @@ fn void test_eval_unknown_function() @test {
         eval_err_with("foo(1)", &syms);
     };
 }
+
+fn void test_eval_function_multi_arg() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("fn int add(int a, int b) { a + b }", &syms), 0);
+        test::eq(eval_ok_with("add(2, 3)", &syms), 5);
+        test::eq(eval_ok_with("add(10, add(1, 1))", &syms), 12);
+    };
+}
+
+fn void test_eval_function_arity_mismatch() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("fn int add(int a, int b) { a + b }", &syms), 0);
+        eval_err_with("add(2)", &syms);
+        eval_err_with("add(1, 2, 3)", &syms);
+    };
+}

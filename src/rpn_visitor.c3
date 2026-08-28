@@ -65,7 +65,7 @@ fn void RPNVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
 
 fn void RPNVisitor.visit_call(&self, ASTCall* node) @dynamic
 {
-    node.arg.accept(self);
+    for (sz i = 0; i < (sz)node.argc; i++) node.args[i].accept(self);
     self.append(string::tformat("CALL(%s)", node.name));
 }
 

@@ -6,14 +6,27 @@ import std::core::string;
 
 const sz MAX_CALL_DEPTH = 256;
 
+enum Type : uint
+{
+    INT,
+}
+
 struct VarSymbol
 {
     int value;
 }
 
+struct Param
+{
+    Type type;
+    String name;
+}
+
 struct FunctionDef
 {
-    String param;
+    Type ret_type;
+    Param[16] params;
+    usz param_count;
     ast::ASTNode body;
 }
 
@@ -61,12 +74,17 @@ fn void SymbolTable.bind_var(&self, String name, int value)
     cur.vars.set(name, { .value = value });
 }
 
-fn void SymbolTable.register_func(&self, String name, String param, ast::ASTNode body)
+fn void SymbolTable.register_func(&self, String name, Type ret_type, Param* params, usz param_count, ast::ASTNode body)
 {
-    self.global.funcs.set(name, { .param = param, .body = body });
+    FunctionDef def;
+    def.ret_type = ret_type;
+    def.param_count = param_count;
+    def.body = body;
+    for (sz i = 0; i < (sz)param_count; i++) def.params[i] = params[i];
+    self.global.funcs.set(name, def);
 }
 
-fn void SymbolTable.push_call_scope(&self, String param, int value)
+fn void SymbolTable.push_call_scope(&self, Param* params, usz param_count, int[16] values)
 {
     if (self.frame_count >= MAX_CALL_DEPTH)
     {
@@ -75,7 +93,10 @@ fn void SymbolTable.push_call_scope(&self, String param, int value)
     Scope frame;
     frame.vars.init(self.allocator);
     frame.funcs.init(self.allocator);
-    frame.vars.set(param, { .value = value });
+    for (sz i = 0; i < (sz)param_count; i++)
+    {
+        frame.vars.set(params[i].name, { .value = values[i] });
+    }
     self.frames[self.frame_count] = frame;
     self.frame_count++;
 }

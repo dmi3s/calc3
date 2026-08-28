@@ -29,6 +29,7 @@ struct EvalVisitor (ASTVisitor)
 {
     EvalContext* ctx;
     symbol_table::SymbolTable* syms;
+    Allocator allocator;
 }
 
 fn EvalVisitor make_eval_visitor(Allocator allocator, symbol_table::SymbolTable* syms)
@@ -36,6 +37,7 @@ fn EvalVisitor make_eval_visitor(Allocator allocator, symbol_table::SymbolTable*
     EvalVisitor v;
     v.ctx = alloc::new(allocator, EvalContext, {});
     v.syms = syms;
+    v.allocator = allocator;
     return v;
 }
 
@@ -156,7 +158,7 @@ fn void EvalVisitor.visit_let(&self, ASTLet* node) @dynamic
 
 fn void EvalVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
 {
-    self.syms.register_func(node.name, node.param, node.body);
+    self.syms.register_func(node.name, node.ret_type, &node.params[0], node.param_count, node.body);
     self.ctx.result = 0;
 }
 
@@ -187,10 +189,20 @@ fn void EvalVisitor.visit_call(&self, ASTCall* node) @dynamic
         return;
     }
     FunctionDef* func = f;
-    node.arg.accept(self);
-    if (self.ctx.failed) return;
-    int argval = self.ctx.result;
-    self.syms.push_call_scope(func.param, argval);
+    int argc = (int)func.param_count;
+    if (node.argc != (usz)argc)
+    {
+        self.fail(node.ref, "Argument count mismatch");
+        return;
+    }
+    int[16] argvals;
+    for (sz i = 0; i < argc; i++)
+    {
+        node.args[i].accept(self);
+        if (self.ctx.failed) return;
+        argvals[i] = self.ctx.result;
+    }
+    self.syms.push_call_scope(&func.params[0], (usz)argc, argvals);
     func.body.accept(self);
     self.syms.pop_call_scope();
 }

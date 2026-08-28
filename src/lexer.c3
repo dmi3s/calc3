@@ -89,6 +89,8 @@ fn Token? Lexer.next(&self) {
             return @mk_token(RBRACE, {self.eat()}, start);
         case '=':
             return @mk_token(EQ, {self.eat()}, start);
+        case ',':
+            return @mk_token(COMMA, {self.eat()}, start);
         case '+':
             return @mk_token(PLUS, {self.eat()}, start);
         case '-':

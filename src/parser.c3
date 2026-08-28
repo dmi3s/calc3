@@ -2,8 +2,10 @@ module calc3::parser;
 import calc3::lexer;
 import calc3::token;
 import calc3::ast;
+import calc3::symbol_table;
 import std::io;
 import std::core;
+import std::core::string;
 import std::collections::result;
 
 struct ParseError (Printable)
@@ -120,22 +122,28 @@ fn Result{ast::ASTNode, ParseError} Parser.primary(&self)
             {
                 self.advance();
                 if (self.failed) return result::err(self.error);
-                ast::ASTNode arg;
-                if (self.current.kind == RPAREN)
-                {
-                    arg = ast::create_number(self.allocator, 0, self.current.ref);
-                }
-                else
-                {
-                    arg = self.expression().@or_else(;r) { return r; };
-                }
+                ast::ASTNode[16] args;
+                usz argc = 0;
                 if (self.current.kind != RPAREN)
                 {
-                    return result::err({ .ref = self.current.ref, .msg = "Expected ')'" });
+                    while (true)
+                    {
+                        ast::ASTNode a = self.expression().@or_else(;r) { return r; };
+                        if (argc >= 16) return result::err({ .ref = self.current.ref, .msg = "Too many arguments" });
+                        args[argc] = a;
+                        argc++;
+                        if (self.current.kind == RPAREN) break;
+                        if (self.current.kind != COMMA)
+                        {
+                            return result::err({ .ref = self.current.ref, .msg = "Expected ',' or ')'" });
+                        }
+                        self.advance();
+                        if (self.failed) return result::err(self.error);
+                    }
                 }
                 self.advance();
                 if (self.failed) return result::err(self.error);
-                return result::ok(ast::create_call(self.allocator, name, arg, ref));
+                return result::ok(ast::create_call(self.allocator, name, &args[0], argc, ref));
             }
             return result::ok(ast::create_ident(self.allocator, name, ref));
         }
@@ -182,16 +190,57 @@ fn Result{ast::ASTNode, ParseError} Parser.let_stmt(&self)
     return result::ok(ast::create_let(self.allocator, name, value, self.current.ref));
 }
 
+fn Result{symbol_table::Type, ParseError} Parser.parse_type(&self)
+{
+    if (self.current.name.compare_to("int") == 0) return result::ok(symbol_table::Type.INT);
+    return result::err({ .ref = self.current.ref, .msg = string::tformat("Unsupported type '%s'", self.current.name) });
+}
+
+fn Result{usz, ParseError} Parser.parse_params(&self, symbol_table::Param* out_params)
+{
+    usz count = 0;
+    if (self.current.kind == RPAREN) return result::ok(0);
+    while (true)
+    {
+        if (self.current.kind != IDENT)
+        {
+            return result::err({ .ref = self.current.ref, .msg = "Expected parameter type" });
+        }
+        Type type = self.parse_type().@or_else(;it) { return result::err(it.error); };
+        self.advance();
+        if (self.failed) return result::err(self.error);
+        if (self.current.kind != IDENT)
+        {
+            return result::err({ .ref = self.current.ref, .msg = "Expected parameter name" });
+        }
+        if (count >= 16) return result::err({ .ref = self.current.ref, .msg = "Too many parameters" });
+        String pname = self.current.name;
+        self.advance();
+        if (self.failed) return result::err(self.error);
+        out_params[count] = { .type = type, .name = pname };
+        count++;
+        if (self.current.kind == RPAREN) break;
+        if (self.current.kind != COMMA)
+        {
+            return result::err({ .ref = self.current.ref, .msg = "Expected ',' or ')'" });
+        }
+        self.advance();
+        if (self.failed) return result::err(self.error);
+    }
+    return result::ok(count);
+}
+
 fn Result{ast::ASTNode, ParseError} Parser.fn_stmt(&self)
 {
     // current == 'fn'
     self.advance();
     if (self.failed) return result::err(self.error);
-    // return type (any identifier accepted for now)
+    // return type
     if (self.current.kind != IDENT)
     {
         return result::err({ .ref = self.current.ref, .msg = "Expected return type" });
     }
+    Type ret_type = self.parse_type().@or_else(;it) { return result::err(it.error); };
     self.advance();
     if (self.failed) return result::err(self.error);
     if (self.current.kind != IDENT)
@@ -207,20 +256,8 @@ fn Result{ast::ASTNode, ParseError} Parser.fn_stmt(&self)
     }
     self.advance();
     if (self.failed) return result::err(self.error);
-    // parameter type
-    if (self.current.kind != IDENT)
-    {
-        return result::err({ .ref = self.current.ref, .msg = "Expected parameter type" });
-    }
-    self.advance();
-    if (self.failed) return result::err(self.error);
-    if (self.current.kind != IDENT)
-    {
-        return result::err({ .ref = self.current.ref, .msg = "Expected parameter name" });
-    }
-    String param = self.current.name;
-    self.advance();
-    if (self.failed) return result::err(self.error);
+    symbol_table::Param[16] params;
+    usz param_count = self.parse_params(&params[0]).@or_else(;r) { return result::err(r.error); };
     if (self.current.kind != RPAREN)
     {
         return result::err({ .ref = self.current.ref, .msg = "Expected ')'" });
@@ -241,7 +278,7 @@ fn Result{ast::ASTNode, ParseError} Parser.fn_stmt(&self)
     }
     self.advance();
     if (self.failed) return result::err(self.error);
-    return result::ok(ast::create_fundef(self.allocator, name, param, body, self.current.ref));
+    return result::ok(ast::create_fundef(self.allocator, name, ret_type, &params[0], param_count, body, self.current.ref));
 }
 
 fn Result{ast::ASTNode, ParseError} Parser.program(&self)
