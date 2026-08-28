@@ -54,6 +54,43 @@ fn void Parser.advance(&self)
 
 fn Result{ast::ASTNode, ParseError} Parser.expression(&self)
 {
+    return self.equality();
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.equality(&self)
+{
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode node = self.relational().@or_else(;r) { return r; };
+    while (self.current.kind == EQEQ || self.current.kind == NEQ)
+    {
+        token::Ref ref = self.current.ref;
+        token::TokenKind op = self.current.kind;
+        self.advance();
+        if (self.failed) return result::err(self.error);
+        ast::ASTNode right = self.relational().@or_else(;r) { return r; };
+        node = ast::create_binary(self.allocator, op, node, right, ref);
+    }
+    return result::ok(node);
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.relational(&self)
+{
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode node = self.additive().@or_else(;r) { return r; };
+    while (self.current.kind == LESS || self.current.kind == GREATER || self.current.kind == LEQ || self.current.kind == GEQ)
+    {
+        token::Ref ref = self.current.ref;
+        token::TokenKind op = self.current.kind;
+        self.advance();
+        if (self.failed) return result::err(self.error);
+        ast::ASTNode right = self.additive().@or_else(;r) { return r; };
+        node = ast::create_binary(self.allocator, op, node, right, ref);
+    }
+    return result::ok(node);
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.additive(&self)
+{
     if (self.failed) return result::err(self.error);
     ast::ASTNode node = self.term().@or_else(;r) { return r; };
     while (self.current.kind == PLUS || self.current.kind == MINUS)
@@ -102,6 +139,10 @@ fn Result{ast::ASTNode, ParseError} Parser.factor(&self)
 fn Result{ast::ASTNode, ParseError} Parser.primary(&self)
 {
     if (self.failed) return result::err(self.error);
+    if (self.current.kind == IDENT && self.current.name.compare_to("if") == 0)
+    {
+        return self.if_expr();
+    }
     switch (self.current.kind)
     {
         case NUMBER:
@@ -165,6 +206,63 @@ fn Result{ast::ASTNode, ParseError} Parser.primary(&self)
         default:
             return result::err({ .ref = self.current.ref, .msg = "Unexpected token" });
     }
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.if_expr(&self)
+{
+    token::Ref ref = self.current.ref;
+    // current == 'if'
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != LPAREN)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '(' after 'if'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode cond = self.expression().@or_else(;r) { return r; };
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != RPAREN)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected ')'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != LBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '{' after 'if' condition" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode then_branch = self.expression().@or_else(;r) { return r; };
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != RBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '}'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != IDENT || self.current.name.compare_to("else") != 0)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected 'else'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != LBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '{' after 'else'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode else_branch = self.expression().@or_else(;r) { return r; };
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != RBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '}'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    return result::ok(ast::create_if(self.allocator, cond, then_branch, else_branch, ref));
 }
 
 fn Result{ast::ASTNode, ParseError} Parser.let_stmt(&self)

@@ -63,6 +63,14 @@ fn void RPNVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
     self.append(string::tformat("FN(%s)", node.name));
 }
 
+fn void RPNVisitor.visit_if(&self, ASTIf* node) @dynamic
+{
+    node.cond.accept(self);
+    node.then_branch.accept(self);
+    node.else_branch.accept(self);
+    self.append("IF");
+}
+
 fn void RPNVisitor.visit_call(&self, ASTCall* node) @dynamic
 {
     for (sz i = 0; i < (sz)node.argc; i++) node.args[i].accept(self);

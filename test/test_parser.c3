@@ -184,3 +184,25 @@ fn void test_parse_func_unsupported_type() @test {
         test::eq(string::tformat("%s", res.error.msg), "Unsupported type 'float'");
     };
 }
+
+fn void test_parse_comparison() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("a <= 1", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(IDENT(a) <= NUMBER(1))");
+        Result{ast::ASTNode, parser::ParseError} res2 = parser::parse("a == b", tmem);
+        test::@check(res2.is_ok);
+        test::eq(string::tformat("%s", res2.value), "(IDENT(a) == IDENT(b))");
+    };
+}
+
+fn void test_parse_if_expr() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("if (n <= 1) { n } else { fib(n - 1) + fib(n - 2) }", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value),
+            "(if (IDENT(n) <= NUMBER(1)) IDENT(n) ((fib (IDENT(n) - NUMBER(1))) + (fib (IDENT(n) - NUMBER(2)))))");
+    };
+}

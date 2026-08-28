@@ -311,3 +311,29 @@ fn void test_eval_function_arity_mismatch() @test {
         eval_err_with("add(1, 2, 3)", &syms);
     };
 }
+
+fn void test_eval_comparisons() @test {
+    @pool()
+    {
+        test::eq(eval_ok("3 <= 2"), 0);
+        test::eq(eval_ok("3 < 5"), 1);
+        test::eq(eval_ok("10 == 10"), 1);
+        test::eq(eval_ok("7 != 7"), 0);
+        test::eq(eval_ok("3 + 4 > 5"), 1);
+        test::eq(eval_ok("2 >= 2"), 1);
+        test::eq(eval_ok("5 == 3 + 2"), 1);
+    };
+}
+
+fn void test_eval_conditional() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("fn int fib(int n) { if (n <= 1) { n } else { fib(n - 1) + fib(n - 2) } }", &syms), 0);
+        test::eq(eval_ok_with("fib(10)", &syms), 55);
+        test::eq(eval_ok_with("fib(15)", &syms), 610);
+        test::eq(eval_ok_with("fn int fact(int n) { if (n <= 1) { 1 } else { n * fact(n - 1) } }", &syms), 0);
+        test::eq(eval_ok_with("fact(5)", &syms), 120);
+    };
+}

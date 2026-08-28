@@ -160,7 +160,8 @@ fn void process_file(String file, symbol_table::SymbolTable* syms)
     String[] lines = ((String)content).tsplit("\n", 0, true);
     foreach (line : lines)
     {
-        process_line(line.trim(), tmem, syms);
+        io::print(process_line(line.trim(), tmem, syms));
+        io::print("\n");
     }
 }
 

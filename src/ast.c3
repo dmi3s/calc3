@@ -13,6 +13,7 @@ interface ASTVisitor
     fn void visit_let(ASTLet* node);
     fn void visit_fundef(ASTFunDef* node);
     fn void visit_call(ASTCall* node);
+    fn void visit_if(ASTIf* node);
 }
 
 interface ASTNode
@@ -155,8 +156,26 @@ fn sz? ASTCall.to_format(&self, Formatter* f) @dynamic
     return f.printf(")");
 }
 
+struct ASTIf (ASTNode, Printable)
+{
+    token::Ref ref;
+    ASTNode cond;
+    ASTNode then_branch;
+    ASTNode else_branch;
+}
+
+fn void ASTIf.accept(&self, ASTVisitor visitor) @dynamic
+{
+    visitor.visit_if(self);
+}
+
+fn sz? ASTIf.to_format(&self, Formatter* f) @dynamic
+{
+    return f.printf("(if %s %s %s)", self.cond, self.then_branch, self.else_branch);
+}
+
 <*
- @require op == token::TokenKind.PLUS || op == token::TokenKind.MINUS || op == token::TokenKind.MUL || op == token::TokenKind.DIV || op == token::TokenKind.MOD : "Not a binary operator"
+ @require op == token::TokenKind.PLUS || op == token::TokenKind.MINUS || op == token::TokenKind.MUL || op == token::TokenKind.DIV || op == token::TokenKind.MOD || op == token::TokenKind.EQEQ || op == token::TokenKind.NEQ || op == token::TokenKind.LESS || op == token::TokenKind.GREATER || op == token::TokenKind.LEQ || op == token::TokenKind.GEQ : "Not a binary operator"
 *>
 fn String op_symbol(token::TokenKind op) {
     switch (op) {
@@ -165,6 +184,12 @@ fn String op_symbol(token::TokenKind op) {
         case MUL: return "*";
         case DIV: return "/";
         case MOD: return "%";
+        case EQEQ: return "==";
+        case NEQ: return "!=";
+        case LESS: return "<";
+        case GREATER: return ">";
+        case LEQ: return "<=";
+        case GEQ: return ">=";
         default: return "?";
     }
 }
@@ -223,6 +248,14 @@ fn ASTNode create_call(Allocator allocator, String name, ASTNode* args, usz argc
     return (ASTNode)node;
 }
 
+fn ASTNode create_if(Allocator allocator, ASTNode cond, ASTNode then_branch, ASTNode else_branch, token::Ref ref)
+{
+    ASTIf* node = alloc::new(allocator, ASTIf, {
+        .ref = ref, .cond = cond, .then_branch = then_branch, .else_branch = else_branch
+    });
+    return (ASTNode)node;
+}
+
 struct ASTestVisitor (ast::ASTVisitor)
 {
     void* dummy;
@@ -269,4 +302,15 @@ fn void ASTestVisitor.visit_call(&self, ast::ASTCall* node) @dynamic
 {
     io::printf("Call \"%s\":\n", node.name);
     foreach (a : node.args) a.accept(self);
+}
+
+fn void ASTestVisitor.visit_if(&self, ast::ASTIf* node) @dynamic
+{
+    io::printf("If:\n");
+    io::printf("cond:\n");
+    node.cond.accept(self);
+    io::printf("then:\n");
+    node.then_branch.accept(self);
+    io::printf("else:\n");
+    node.else_branch.accept(self);
 }

@@ -88,7 +88,45 @@ fn Token? Lexer.next(&self) {
         case '}':
             return @mk_token(RBRACE, {self.eat()}, start);
         case '=':
-            return @mk_token(EQ, {self.eat()}, start);
+        {
+            char c = self.eat();
+            if (!self.@is_eof() && self.peek() == '=')
+            {
+                self.eat();
+                return @mk_token(EQEQ, {}, start);
+            }
+            return @mk_token(EQ, {c}, start);
+        }
+        case '!':
+        {
+            self.eat();
+            if (!self.@is_eof() && self.peek() == '=')
+            {
+                self.eat();
+                return @mk_token(NEQ, {}, start);
+            }
+            return UNKNOWN_CHAR~;
+        }
+        case '<':
+        {
+            self.eat();
+            if (!self.@is_eof() && self.peek() == '=')
+            {
+                self.eat();
+                return @mk_token(LEQ, {}, start);
+            }
+            return @mk_token(LESS, {}, start);
+        }
+        case '>':
+        {
+            self.eat();
+            if (!self.@is_eof() && self.peek() == '=')
+            {
+                self.eat();
+                return @mk_token(GEQ, {}, start);
+            }
+            return @mk_token(GREATER, {}, start);
+        }
         case ',':
             return @mk_token(COMMA, {self.eat()}, start);
         case '+':

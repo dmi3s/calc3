@@ -118,6 +118,26 @@ fn void test_identifier() @test {
     });
 }
 
+fn void test_comparison_tokens() @test {
+    Lexer lex = @make_lexer("a <= b >= c == d != e < f > g");
+    @verify_tokens(lex, {
+        { .kind = IDENT, .name = "a", .ref = {1, 1} },
+        { .kind = LEQ, .ref = {1, 3} },
+        { .kind = IDENT, .name = "b", .ref = {1, 6} },
+        { .kind = GEQ, .ref = {1, 8} },
+        { .kind = IDENT, .name = "c", .ref = {1, 11} },
+        { .kind = EQEQ, .ref = {1, 13} },
+        { .kind = IDENT, .name = "d", .ref = {1, 16} },
+        { .kind = NEQ, .ref = {1, 18} },
+        { .kind = IDENT, .name = "e", .ref = {1, 21} },
+        { .kind = LESS, .ref = {1, 23} },
+        { .kind = IDENT, .name = "f", .ref = {1, 25} },
+        { .kind = GREATER, .ref = {1, 27} },
+        { .kind = IDENT, .name = "g", .ref = {1, 29} },
+        { .kind = EOF, .ref = {1, 30} }
+    });
+}
+
 fn void test_keyword_and_symbol_tokens() @test {
     Lexer lex = @make_lexer("fn int sq(int n) { n = 5 }");
     @verify_tokens(lex, {

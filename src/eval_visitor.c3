@@ -118,6 +118,24 @@ fn bool EvalVisitor.apply_binary(&self, token::TokenKind op, int left, int right
             }
             self.ctx.result = op == token::TokenKind.DIV ? left / right : left % right;
             return true;
+        case token::TokenKind.EQEQ:
+            self.ctx.result = left == right ? 1 : 0;
+            return true;
+        case token::TokenKind.NEQ:
+            self.ctx.result = left != right ? 1 : 0;
+            return true;
+        case token::TokenKind.LESS:
+            self.ctx.result = left < right ? 1 : 0;
+            return true;
+        case token::TokenKind.GREATER:
+            self.ctx.result = left > right ? 1 : 0;
+            return true;
+        case token::TokenKind.LEQ:
+            self.ctx.result = left <= right ? 1 : 0;
+            return true;
+        case token::TokenKind.GEQ:
+            self.ctx.result = left >= right ? 1 : 0;
+            return true;
         default:
             self.fail(ref, "Unknown operator");
             return false;
@@ -154,6 +172,20 @@ fn void EvalVisitor.visit_let(&self, ASTLet* node) @dynamic
     int val = self.ctx.result;
     self.syms.bind_var(node.name, val);
     self.ctx.result = val;
+}
+
+fn void EvalVisitor.visit_if(&self, ASTIf* node) @dynamic
+{
+    node.cond.accept(self);
+    if (self.ctx.failed) return;
+    if (self.ctx.result != 0)
+    {
+        node.then_branch.accept(self);
+    }
+    else
+    {
+        node.else_branch.accept(self);
+    }
 }
 
 fn void EvalVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic

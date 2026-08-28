@@ -9,6 +9,8 @@ enum TokenKind : uint {
     LBRACE, RBRACE,
     COMMA,
     EQ,
+    EQEQ, NEQ,
+    LESS, GREATER, LEQ, GEQ,
     MUL, DIV, MOD,
     PLUS, MINUS,
     EOF,

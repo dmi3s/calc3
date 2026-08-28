@@ -115,6 +115,22 @@ fn void ASTreeVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
     self.ctx.depth--;
 }
 
+fn void ASTreeVisitor.visit_if(&self, ASTIf* node) @dynamic
+{
+    self.append_line(string::tformat("IF (%d:%d)",
+        node.ref.row, node.ref.col));
+    self.reserve_ancestors();
+    if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
+    self.ctx.depth++;
+    self.ctx.is_last = false;
+    node.cond.accept(self);
+    self.ctx.is_last = false;
+    node.then_branch.accept(self);
+    self.ctx.is_last = true;
+    node.else_branch.accept(self);
+    self.ctx.depth--;
+}
+
 fn void ASTreeVisitor.visit_call(&self, ASTCall* node) @dynamic
 {
     self.append_line(string::tformat("CALL(%s) (%d:%d)",
