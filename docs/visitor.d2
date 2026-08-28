@@ -1,0 +1,52 @@
+# ASTreeVisitor traversal (with context)
+
+direction: down
+
+ctx: "ASTreeContext (carried via ASTreeVisitor.ctx*)\n─────────────────────────────────────────\nout: DString        -- accumulated output lines\ndepth: sz            -- current nesting level (= indent)\nis_last: bool        -- is current node the last child?\nancestor_is_last: bool[] -- per-level connector flag" {
+  shape: rectangle
+  style: { fill: "#e6f4ea" }
+}
+
+visitor: "ASTreeVisitor { ctx: ASTreeContext* }" {
+  shape: rectangle
+  style: { fill: "#e8f0fe" }
+}
+
+ast: "AST root BIN(-) (1:14) -- same tree as parser diagram" {
+  shape: rectangle
+  style: { fill: "#f3e8ff" }
+}
+
+order: "Preorder visit calls (depth = indent level)" {
+  shape: rectangle
+  style: { fill: "#fff4e6" }
+  c1: "visit_binary BIN(-)   [depth 0]"
+  c2: "visit_binary BIN(*)   [depth 1]"
+  c3: "visit_unary  UNARY(-) [depth 2]"
+  c4: "visit_binary BIN(+)   [depth 3]"
+  c5: "visit_number NUM(2)   [depth 4]"
+  c6: "visit_number NUM(3)   [depth 4]"
+  c7: "visit_number NUM(4)   [depth 2]"
+  c8: "visit_binary BIN(%)   [depth 1]"
+  c9: "visit_binary BIN(/)   [depth 2]"
+  c10: "visit_number NUM(6)  [depth 3]"
+  c11: "visit_number NUM(2)  [depth 3]"
+  c12: "visit_number NUM(3)  [depth 2]"
+}
+
+visitor -> ast: "root.accept(&v) traverses"
+visitor -> ctx: "holds ctx*"
+ctx -> order: "read/written by each visit_*"
+visitor -> order: "starts preorder"
+
+order.c1 -> order.c2: "left.accept (depth+1)"
+order.c2 -> order.c3: "left.accept (depth+1)"
+order.c3 -> order.c4: "operand.accept (depth+1)"
+order.c4 -> order.c5: "left.accept (depth+1)"
+order.c4 -> order.c6: "right.accept (depth+1)"
+order.c2 -> order.c7: "right.accept (depth+1)"
+order.c1 -> order.c8: "right.accept (depth+1)"
+order.c8 -> order.c9: "left.accept (depth+1)"
+order.c9 -> order.c10: "left.accept (depth+1)"
+order.c9 -> order.c11: "right.accept (depth+1)"
+order.c8 -> order.c12: "right.accept (depth+1)"

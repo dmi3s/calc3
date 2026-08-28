@@ -1,0 +1,48 @@
+# Tokenization and parsing of "-(2 + 3) * 4 - 6 / 2 % 3"
+
+direction: right
+
+src: "Source text\n──────────────\n-(2 + 3) * 4 - 6 / 2 % 3" {
+  shape: text
+}
+
+lexer: "Lexer (lexer.c3)\nLexer.next() -> Token?" {
+  shape: rectangle
+  style: { fill: "#e8f0fe" }
+}
+
+tokens: "Token stream\n────────────────────────────────\nMINUS    (1:1)\nLPAREN   (1:2)\nNUMBER 2 (1:3)\nPLUS     (1:5)\nNUMBER 3 (1:7)\nRPAREN   (1:8)\nMUL      (1:10)\nNUMBER 4 (1:12)\nMINUS    (1:14)\nNUMBER 6 (1:16)\nDIV      (1:18)\nNUMBER 2 (1:20)\nMOD      (1:22)\nNUMBER 3 (1:24)\nEOF" {
+  shape: rectangle
+  style: { fill: "#fff4e6" }
+}
+
+parser: "Parser (parser.c3)\nparse() -> Result{ASTNode, ParseError}\nrecursive descent" {
+  shape: rectangle
+  style: { fill: "#e6f4ea" }
+}
+
+ast: "AST root: BIN(-) (1:14)" {
+  shape: rectangle
+  style: { fill: "#f3e8ff" }
+  lchild: "BIN(*) (1:10)" {
+    lu: "UNARY(-) (1:1)" {
+      luo: "BIN(+) (1:5)" {
+        a: "NUM(2) (1:3)"
+        b: "NUM(3) (1:7)"
+      }
+    }
+    r1: "NUM(4) (1:12)"
+  }
+  rchild: "BIN(%) (1:22)" {
+    l2: "BIN(/) (1:18)" {
+      c: "NUM(6) (1:16)"
+      d: "NUM(2) (1:20)"
+    }
+    r2: "NUM(3) (1:24)"
+  }
+}
+
+src -> lexer: "feeds chars"
+lexer -> tokens: "Token? stream"
+tokens -> parser: "consumed by"
+parser -> ast: "builds"
