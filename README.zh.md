@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:a1d47d77100b1f7f29ad59c09319cd9d9a1d6373d3d8a20dfdfca2f2e7a4445e -->
+<!-- source-hash: sha256:c15247a5f2376e5d878265d42db4cf5e96781d9249bbbf24d21daa2a6bff300a -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -115,10 +115,11 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
     会连同位置一起返回错误。
 - **语法分析器（Parser）** — [src/parser.c3](src/parser.c3)：按照上面的文法进行递归下降，
   遵循优先级和结合性；构建 AST，支持一元运算符和括号。错误会连同描述和位置一起返回。
-- **程序入口** — [src/main.c3](src/main.c3)：从 stdin 读取表达式，对每一行打印 RPN 和计算出的值
+- **程序入口** — [src/main.c3](src/main.c3)：实现命令行参数解析（`parse_args`）、
+  交互式 REPL（`run_repl`）以及从文件读取表达式（`process_file`）；对每个表达式打印 AST、RPN 和计算结果
   （或错误信息）。输入 “?” 时输出数字 42。
 - **测试** — [test/](test/)：针对词法分析器、AST、语法分析器、eval 和程序入口的单元测试
-  （67 个测试）。运行方式：`c3c test calc3`。
+  （74 个测试）。运行方式：`c3c test calc3`。
 
 暂不规划：词法分析器/语法分析器在出错后的恢复。
 
@@ -136,7 +137,7 @@ calc3/
 │   ├── rpn_visitor.c3             ── 访问者：AST → 逆波兰表达式
 │   ├── eval_visitor.c3            ── 访问者：AST → 表达式值
 │   ├── parser.c3                  ── 语法分析器：Token → AST（递归下降）
-│   └── main.c3                    ── 程序入口：从 stdin 读取表达式
+│   └── main.c3                    ── 程序入口：参数解析、REPL 与文件读取
 ├── test/                          ── 测试
 │   └── *.c3                       ── 针对 src/ 中每个模块的单元测试
 ├── resources/

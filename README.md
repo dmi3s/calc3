@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:a1d47d77100b1f7f29ad59c09319cd9d9a1d6373d3d8a20dfdfca2f2e7a4445e -->
+<!-- source-hash: sha256:c15247a5f2376e5d878265d42db4cf5e96781d9249bbbf24d21daa2a6bff300a -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -120,10 +120,11 @@ traversal — both to output reverse Polish notation and to evaluate expressions
 - **Parser** — [src/parser.c3](src/parser.c3): recursive descent over the grammar (see above) respecting
   precedence and associativity; builds the AST, supports unary operators and parentheses.
   Errors are returned together with a description and position.
-- **Entry point** — [src/main.c3](src/main.c3): reads expressions from stdin and prints, for each line,
-  the RPN and the evaluated value (or an error message). In response to "?" it prints 42.
+- **Entry point** — [src/main.c3](src/main.c3): implements command-line argument parsing
+  (`parse_args`), the interactive REPL (`run_repl`) and reading expressions from a file (`process_file`);
+  for each expression it prints the AST, RPN and the evaluated value (or an error message). In response to "?" it prints 42.
 - **Tests** — [test/](test/): unit tests for the lexer, AST, parser, eval and the entry point
-  (67 tests). Run with `c3c test calc3`.
+  (74 tests). Run with `c3c test calc3`.
 
 Not planned: recovery of the lexer/parser after errors.
 
@@ -141,7 +142,7 @@ calc3/
 │   ├── rpn_visitor.c3             ── Visitor: AST → reverse Polish notation
 │   ├── eval_visitor.c3            ── Visitor: AST → expression value
 │   ├── parser.c3                  ── Parser: tokens → AST (recursive descent)
-│   └── main.c3                    ── Entry point: reads expressions from stdin
+│   └── main.c3                    ── Entry point: argument parsing, REPL and file input
 ├── test/                          ── Tests
 │   └── *.c3                       ── Unit tests for each module in src/
 ├── resources/
