@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:bb80783477750af111d7bcf959423cc9d4908bc8f9b3a60d279e508466445fec -->
+<!-- source-hash: sha256:85016ebf84ec9ef91848f6621dfc836e1ef81704a79690a926bc5864b80a0c51 -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -125,6 +125,11 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 # 文档
 
+<p align="center">
+  <img src="resources/calc3_pipeline.svg" alt="Calc3 流水线：文本 → 词法分析器 → 记号 → 语法分析器 → AST → RPN / Eval" width="760"/>
+</p>
+
+- 流水线图 — [源代码（D2）](docs/pipeline.d2)
 - 架构 — [PDF](docs/architecture.zh.pdf) · [源代码（Typst）](docs/architecture.zh.typ)
 
 # 项目结构

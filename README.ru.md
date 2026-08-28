@@ -129,6 +129,11 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 # Документация
 
+<p align="center">
+  <img src="resources/calc3_pipeline.svg" alt="Конвейер Calc3: текст → лексер → токены → парсер → AST → RPN / Eval" width="760"/>
+</p>
+
+- Схема конвейера — [исходник (D2)](docs/pipeline.d2)
 - Архитектура — [PDF](docs/architecture.ru.pdf) · [исходник (Typst)](docs/architecture.ru.typ)
 
 # Структура проекта

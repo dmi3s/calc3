@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:bb80783477750af111d7bcf959423cc9d4908bc8f9b3a60d279e508466445fec -->
+<!-- source-hash: sha256:85016ebf84ec9ef91848f6621dfc836e1ef81704a79690a926bc5864b80a0c51 -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -130,6 +130,11 @@ Not planned: recovery of the lexer/parser after errors.
 
 # Documentation
 
+<p align="center">
+  <img src="resources/calc3_pipeline.svg" alt="Calc3 pipeline: text → lexer → tokens → parser → AST → RPN / Eval" width="760"/>
+</p>
+
+- Pipeline diagram — [source (D2)](docs/pipeline.d2)
 - Architecture — [PDF](docs/architecture.pdf) · [source (Typst)](docs/architecture.typ)
 
 # Project structure

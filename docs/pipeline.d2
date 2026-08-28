@@ -1,0 +1,35 @@
+# Calc3 pipeline preview
+
+direction: right
+
+src: "Source text" {
+  shape: text
+}
+
+lexer: "Lexer\nlexer.c3" {
+  style: { fill: "#e8f0fe" }
+}
+
+tokens: "Token\nstream" {
+  style: { fill: "#fff4e6" }
+}
+
+parser: "Parser\nparser.c3" {
+  style: { fill: "#e6f4ea" }
+}
+
+ast: "AST\nast.c3" {
+  style: { fill: "#f3e8ff" }
+}
+
+rpn: "RPN\nrpn_visitor.c3" {
+  style: { fill: "#fce8e6" }
+}
+
+eval: "Eval\neval_visitor.c3" {
+  style: { fill: "#fce8e6" }
+}
+
+src -> lexer -> tokens -> parser -> ast
+ast -> rpn
+ast -> eval
