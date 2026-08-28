@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:b6f4a5dd1614d554a475efdffc75eb90429b9133bc8f98912374caabcdb2307d -->
+<!-- source-hash: sha256:a1d47d77100b1f7f29ad59c09319cd9d9a1d6373d3d8a20dfdfca2f2e7a4445e -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -60,6 +60,18 @@ BIN(-) (1:14)
 === Result (Eval) ===
 -20
 ```
+
+## Command-line usage
+
+The program supports several run modes:
+
+- `calc3` — interactive REPL: expressions are read one per line from stdin.
+- `calc3 "<expression>"` — evaluate a single expression (prints AST, RPN and result).
+- `calc3 -f <file>` or `calc3 --file <file>` — expressions from a file (one per line).
+- `calc3 -h` / `calc3 --help` — show help.
+
+To pass an expression that starts with `-` (e.g. a negative `-5`), use `--`:
+`calc3 -- "-5 + 8"`.
 
 ## Calculator Syntax
 

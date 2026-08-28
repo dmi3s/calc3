@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:b6f4a5dd1614d554a475efdffc75eb90429b9133bc8f98912374caabcdb2307d -->
+<!-- source-hash: sha256:a1d47d77100b1f7f29ad59c09319cd9d9a1d6373d3d8a20dfdfca2f2e7a4445e -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -58,6 +58,18 @@ BIN(-) (1:14)
 === Result (Eval) ===
 -20
 ```
+
+## 命令行用法
+
+程序支持多种运行模式：
+
+- `calc3` — 交互式 REPL：从 stdin 逐行读取表达式。
+- `calc3 "<表达式>"` — 计算单个表达式（输出 AST、RPN 与结果）。
+- `calc3 -f <文件>` 或 `calc3 --file <文件>` — 从文件读取表达式（每行一个）。
+- `calc3 -h` / `calc3 --help` — 显示帮助。
+
+若要传入以 `-` 开头的表达式（例如负数 `-5`），请使用 `--`：
+`calc3 -- "-5 + 8"`。
 
 ## 计算器语法
 
