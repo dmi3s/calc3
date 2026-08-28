@@ -4,4 +4,5 @@
 # after syncing a translation to refresh its embedded source-hash marker.
 ROOT="$(git rev-parse --show-toplevel)"
 "$ROOT/scripts/check_readme_sync" || true
+"$ROOT/scripts/check_docs_sync" || true
 exit 0

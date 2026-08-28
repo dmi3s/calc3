@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Check that documentation translations are in sync with the source docs/architecture.ru.typ.
+
+The source of truth is docs/architecture.ru.typ (Russian). Each translation
+(docs/architecture.typ = English default, docs/architecture.zh.typ = Chinese)
+embeds a Typst line comment carrying the sha256 of the source file at the moment
+it was last synced:
+
+    // source-hash: sha256:<64 hex chars>
+
+This script compares the current sha256 of docs/architecture.ru.typ with the
+embedded hash in each translation. A mismatch means the translation is (possibly)
+out of date.
+
+Default: hint only, exits 0 (never blocks). Use --update to refresh the embedded
+hashes after a translation has been brought up to date with the source.
+With --strict the script becomes a real test: exits 1 when any *existing*
+translation is out of sync. Missing translation files are skipped (so the check
+only activates once translation files exist).
+"""
+import hashlib
+import os
+import re
+import sys
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SOURCE = "docs/architecture.ru.typ"
+TRANSLATIONS = ["docs/architecture.typ", "docs/architecture.zh.typ"]
+HASH_RE = re.compile(r"//\s*source-hash:\s*sha256:([0-9a-fA-F]{64})\b")
+
+
+def sha256(path):
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def insert_or_replace_hash(text, current):
+    marker = "// source-hash: sha256:{}".format(current)
+    if HASH_RE.search(text):
+        return HASH_RE.sub(lambda m: marker, text, count=1)
+    lines = text.split("\n")
+    lines.insert(0, marker)
+    return "\n".join(lines)
+
+
+def main(argv):
+    update = "--update" in argv[1:]
+    strict = "--strict" in argv[1:]
+    source_path = os.path.join(REPO_ROOT, SOURCE)
+    if not os.path.exists(source_path):
+        print("check_docs_sync: source {} not found at {}".format(SOURCE, source_path),
+              file=sys.stderr)
+        return 0
+    current = sha256(source_path)
+
+    stale = []
+    missing = []
+    for rel in TRANSLATIONS:
+        path = os.path.join(REPO_ROOT, rel)
+        if not os.path.exists(path):
+            missing.append(rel)
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
+        m = HASH_RE.search(text)
+        if not m:
+            print("check_docs_sync: WARNING: {} has no source-hash marker; "
+                  "sync tracking not set up.".format(rel))
+            stale.append(rel)
+            continue
+        if m.group(1).lower() != current:
+            stale.append(rel)
+
+    if not stale and not missing:
+        if update:
+            print("check_docs_sync: all translations already match the source hash.")
+        else:
+            print("check_docs_sync: OK - translations are in sync with "
+                  "{} (source).".format(SOURCE))
+        return 0
+
+    if missing:
+        print("check_docs_sync: note - translation(s) not present yet: {}.".format(
+            ", ".join(missing)))
+        print("  sync tracking will activate once they exist (translate {}, "
+              "then run scripts/check_docs_sync --update).".format(SOURCE))
+
+    if not stale:
+        # only missing translations; not a sync failure
+        return 0
+
+    print("check_docs_sync: WARNING - translations may be out of sync with "
+          "{} (source).".format(SOURCE))
+    print("  source hash ({}): sha256:{}".format(SOURCE, current))
+    for rel in stale:
+        path = os.path.join(REPO_ROOT, rel)
+        if update:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+            text = insert_or_replace_hash(text, current)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            print("  updated {} -> sha256:{}".format(rel, current))
+        else:
+            print("  stale: {} (run: scripts/check_docs_sync --update "
+                  "after syncing)".format(rel))
+
+    if strict:
+        print("check_docs_sync: FAILED - translations are out of sync "
+              "(strict mode).")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

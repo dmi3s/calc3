@@ -44,6 +44,9 @@ jobs:
     - name: Build documentation
       run: make docs
 
+    - name: Check docs translation sync (fails on divergence)
+      run: python3 scripts/check_docs_sync --strict
+
     - name: Upload PDFs
       uses: actions/upload-artifact@v4
       with:
