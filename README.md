@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:6fdaf9cccc966ff259dd97e3a73caa6054ac3422a391b98691b18db28e1fe8e7 -->
+<!-- source-hash: sha256:5bd25094a9db2e11ae31495b5b8cf8d11e08a3079723941b615cd13dc5bbba63 -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -246,6 +246,13 @@ Workflow when editing the source:
 
 Note: the marker only reflects that the source changed, not translation
 quality; run `--update` only after actually updating the translations.
+
+## A note from the author
+
+It started as a neat little exercise, but in practice grew into a compiler's
+"undergrown child" :) As it stands, the language has only `let` and function
+definitions. Functions are not first-class yet, but I'm strongly leaning that way.
+This is a very experimental project — please don't judge it too harshly.
 
 # License
 
