@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:58c10fa612ffc6feb641e4890ba8dca0ea02226f045449ebe222e47b6358c20d -->
+<!-- source-hash: sha256:bb80783477750af111d7bcf959423cc9d4908bc8f9b3a60d279e508466445fec -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -202,3 +202,29 @@ quality; run `--update` only after actually updating the translations.
 # License
 
 The project is distributed under the MIT license.
+
+# Project state: an outside view
+
+> A brief summary for a random visitor, compiled from analysis of the codebase.
+
+**Goals.**
+- *Formal:* define a grammar, write a tokenizer and a recursive-descent parser,
+  build an AST and implement two kinds of traversal — output reverse Polish
+  notation and evaluate the expression's value.
+- *Real:* hands-on learning of the C3 language and working with LLMs using a
+  lesser-known language for which there are few examples online.
+
+**Achievements.**
+The formal pipeline `text → tokens → AST → RPN/value` is fully implemented.
+There are 8 source modules covered by 74 unit tests. Three run modes are
+available (REPL, file, single expression) plus a CLI with argument parsing.
+Documentation is translated into three languages, and the architecture is
+documented with diagrams and a PDF.
+
+**General understanding for a random visitor.**
+Calc3 is not a "product" but a learning sandbox: a minimal yet complete
+calculator in C3 where each stage (lexer, parser, AST, visitors) is factored
+into its own module and covered by tests. It is a good starting point for
+understanding how an expression interpreter is built, while also getting to
+know C3. There is no explicit roadmap yet — the author considers the formal
+goal achieved.
