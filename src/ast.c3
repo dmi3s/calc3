@@ -7,6 +7,10 @@ interface ASTVisitor
     fn void visit_number(ASTNumber* node);
     fn void visit_unary(ASTUnary* node);
     fn void visit_binary(ASTBinary* node);
+    fn void visit_ident(ASTIdent* node);
+    fn void visit_let(ASTLet* node);
+    fn void visit_fundef(ASTFunDef* node);
+    fn void visit_call(ASTCall* node);
 }
 
 interface ASTNode
@@ -66,6 +70,74 @@ fn sz? ASTBinary.to_format(&self, Formatter* f) @dynamic
     return f.printf("(%s %s %s)", self.left, op_symbol(self.op), self.right);
 }
 
+struct ASTIdent (ASTNode, Printable)
+{
+    token::Ref ref;
+    String name;
+}
+
+fn void ASTIdent.accept(&self, ASTVisitor visitor) @dynamic
+{
+    visitor.visit_ident(self);
+}
+
+fn sz? ASTIdent.to_format(&self, Formatter* f) @dynamic
+{
+    return f.printf("IDENT(%s)", self.name);
+}
+
+struct ASTLet (ASTNode, Printable)
+{
+    token::Ref ref;
+    String name;
+    ASTNode value;
+}
+
+fn void ASTLet.accept(&self, ASTVisitor visitor) @dynamic
+{
+    visitor.visit_let(self);
+}
+
+fn sz? ASTLet.to_format(&self, Formatter* f) @dynamic
+{
+    return f.printf("(let %s %s)", self.name, self.value);
+}
+
+struct ASTFunDef (ASTNode, Printable)
+{
+    token::Ref ref;
+    String name;
+    String param;
+    ASTNode body;
+}
+
+fn void ASTFunDef.accept(&self, ASTVisitor visitor) @dynamic
+{
+    visitor.visit_fundef(self);
+}
+
+fn sz? ASTFunDef.to_format(&self, Formatter* f) @dynamic
+{
+    return f.printf("(fn %s(%s) %s)", self.name, self.param, self.body);
+}
+
+struct ASTCall (ASTNode, Printable)
+{
+    token::Ref ref;
+    String name;
+    ASTNode arg;
+}
+
+fn void ASTCall.accept(&self, ASTVisitor visitor) @dynamic
+{
+    visitor.visit_call(self);
+}
+
+fn sz? ASTCall.to_format(&self, Formatter* f) @dynamic
+{
+    return f.printf("(%s %s)", self.name, self.arg);
+}
+
 <*
  @require op == token::TokenKind.PLUS || op == token::TokenKind.MINUS || op == token::TokenKind.MUL || op == token::TokenKind.DIV || op == token::TokenKind.MOD : "Not a binary operator"
 *>
@@ -102,6 +174,36 @@ fn ASTNode create_binary(Allocator allocator, token::TokenKind op, ASTNode left,
     return (ASTNode)node;
 }
 
+fn ASTNode create_ident(Allocator allocator, String name, token::Ref ref)
+{
+    ASTIdent* node = alloc::new(allocator, ASTIdent, { .ref = ref, .name = name });
+    return (ASTNode)node;
+}
+
+fn ASTNode create_let(Allocator allocator, String name, ASTNode value, token::Ref ref)
+{
+    ASTLet* node = alloc::new(allocator, ASTLet, {
+        .ref = ref, .name = name, .value = value
+    });
+    return (ASTNode)node;
+}
+
+fn ASTNode create_fundef(Allocator allocator, String name, String param, ASTNode body, token::Ref ref)
+{
+    ASTFunDef* node = alloc::new(allocator, ASTFunDef, {
+        .ref = ref, .name = name, .param = param, .body = body
+    });
+    return (ASTNode)node;
+}
+
+fn ASTNode create_call(Allocator allocator, String name, ASTNode arg, token::Ref ref)
+{
+    ASTCall* node = alloc::new(allocator, ASTCall, {
+        .ref = ref, .name = name, .arg = arg
+    });
+    return (ASTNode)node;
+}
+
 struct ASTestVisitor (ast::ASTVisitor)
 {
     void* dummy;
@@ -125,4 +227,27 @@ fn void ASTestVisitor.visit_binary(&self, ast::ASTBinary* node) @dynamic
     node.left.accept(self);
     io::printf("right:\n");
     node.right.accept(self);
+}
+
+fn void ASTestVisitor.visit_ident(&self, ast::ASTIdent* node) @dynamic
+{
+    io::printf("Ident: %s\n", node.name);
+}
+
+fn void ASTestVisitor.visit_let(&self, ast::ASTLet* node) @dynamic
+{
+    io::printf("Let \"%s\":\n", node.name);
+    node.value.accept(self);
+}
+
+fn void ASTestVisitor.visit_fundef(&self, ast::ASTFunDef* node) @dynamic
+{
+    io::printf("FunDef \"%s(%s)\":\n", node.name, node.param);
+    node.body.accept(self);
+}
+
+fn void ASTestVisitor.visit_call(&self, ast::ASTCall* node) @dynamic
+{
+    io::printf("Call \"%s\":\n", node.name);
+    node.arg.accept(self);
 }

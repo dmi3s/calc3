@@ -1,23 +1,38 @@
 module calc3::test::eval;
 import calc3::ast;
 import calc3::parser;
+import calc3::symbol_table;
 import std::collections::result;
 
-fn int eval_ok(String src)
+fn int eval_ok_with(String src, symbol_table::SymbolTable* syms)
 {
     Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
     test::@check(r.is_ok);
-    Result{int, ast::EvalError} res = ast::eval(r.value, tmem);
+    Result{int, ast::EvalError} res = ast::eval(r.value, tmem, syms);
     test::@check(res.is_ok);
     return res.value;
 }
 
-fn void eval_err(String src)
+fn void eval_err_with(String src, symbol_table::SymbolTable* syms)
 {
     Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, tmem);
     test::@check(r.is_ok);
-    Result{int, ast::EvalError} res = ast::eval(r.value, tmem);
+    Result{int, ast::EvalError} res = ast::eval(r.value, tmem, syms);
     test::@check(!(res.is_ok));
+}
+
+fn int eval_ok(String src)
+{
+    symbol_table::SymbolTable syms;
+    syms.init(tmem);
+    return eval_ok_with(src, &syms);
+}
+
+fn void eval_err(String src)
+{
+    symbol_table::SymbolTable syms;
+    syms.init(tmem);
+    eval_err_with(src, &syms);
 }
 
 fn void test_eval_number() @test {
@@ -197,5 +212,80 @@ fn void test_eval_overflow_boundaries() @test {
         test::eq(eval_ok("2147483647 * -1"), -2147483647);
         test::eq(eval_ok("-2147483647 / -1"), 2147483647);
         test::eq(eval_ok("1000 * 1000"), 1000000);
+    };
+}
+
+fn void test_eval_let() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("let x = 5", &syms), 5);
+        test::eq(eval_ok_with("x * 2", &syms), 10);
+        test::eq(eval_ok_with("x + 1", &syms), 6);
+    };
+}
+
+fn void test_eval_let_rebind() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("let x = 5", &syms), 5);
+        test::eq(eval_ok_with("let x = 10", &syms), 10);
+        test::eq(eval_ok_with("x", &syms), 10);
+    };
+}
+
+fn void test_eval_unknown_variable() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        eval_err_with("y + 1", &syms);
+    };
+}
+
+fn void test_eval_function_call() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("fn int sq(int n) { n * n }", &syms), 0);
+        test::eq(eval_ok_with("sq(5)", &syms), 25);
+        test::eq(eval_ok_with("sq(3)", &syms), 9);
+    };
+}
+
+fn void test_eval_function_global_var() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("let x = 100", &syms), 100);
+        test::eq(eval_ok_with("fn int g(int n) { n + x }", &syms), 0);
+        test::eq(eval_ok_with("g(7)", &syms), 107);
+        test::eq(eval_ok_with("x", &syms), 100);
+    };
+}
+
+fn void test_eval_function_composition() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        test::eq(eval_ok_with("fn int add1(int n) { n + 1 }", &syms), 0);
+        test::eq(eval_ok_with("fn int add2(int n) { add1(n) + 1 }", &syms), 0);
+        test::eq(eval_ok_with("add2(5)", &syms), 7);
+        test::eq(eval_ok_with("let y = add2(3)", &syms), 5);
+    };
+}
+
+fn void test_eval_unknown_function() @test {
+    @pool()
+    {
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        eval_err_with("foo(1)", &syms);
     };
 }

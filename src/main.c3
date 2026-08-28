@@ -1,6 +1,7 @@
 module calc3::main;
 import calc3::ast;
 import calc3::parser;
+import calc3::symbol_table;
 import std::collections::result;
 import std::core;
 import std::core::string;
@@ -14,22 +15,22 @@ struct PipelineOk
     Result{int, ast::EvalError} eval;
 }
 
-fn Result{PipelineOk, parser::ParseError} pipeline(String src, Allocator allocator)
+fn Result{PipelineOk, parser::ParseError} pipeline(String src, Allocator allocator, symbol_table::SymbolTable* syms)
 {
     Result{ast::ASTNode, parser::ParseError} r = parser::parse(src, allocator);
     if (!r.is_ok) return result::err(r.error);
     String rpn = ast::to_rpn(r.value, allocator);
-    Result{int, ast::EvalError} eval = ast::eval(r.value, allocator);
+    Result{int, ast::EvalError} eval = ast::eval(r.value, allocator, syms);
     return result::ok({ .node = r.value, .rpn = rpn, .eval = eval });
 }
 
-fn String process_line(String src, Allocator allocator)
+fn String process_line(String src, Allocator allocator, symbol_table::SymbolTable* syms)
 {
     if (src.len == 1 && src == "?")
     {
         return "42";
     }
-    Result{PipelineOk, parser::ParseError} p = pipeline(src, allocator);
+    Result{PipelineOk, parser::ParseError} p = pipeline(src, allocator, syms);
     if (!p.is_ok)
     {
         return string::tformat("error: %s", p.error);
@@ -40,13 +41,13 @@ fn String process_line(String src, Allocator allocator)
     return string::tformat("%s\n%s", p.value.rpn, result);
 }
 
-fn String process_to_string(String src, Allocator allocator)
+fn String process_to_string(String src, Allocator allocator, symbol_table::SymbolTable* syms)
 {
     if (src.len == 1 && src == "?")
     {
         return "Result:\n42\n";
     }
-    Result{PipelineOk, parser::ParseError} p = pipeline(src, allocator);
+    Result{PipelineOk, parser::ParseError} p = pipeline(src, allocator, syms);
     if (!p.is_ok)
     {
         return string::tformat("error: %s\n", p.error);
@@ -70,14 +71,6 @@ fn String process_to_string(String src, Allocator allocator)
     }
     out.append_string("\n");
     return out.str_view().copy(allocator);
-}
-
-fn void process(String src)
-{
-    @pool()
-    {
-        io::print(process_to_string(src, tmem));
-    };
 }
 
 fn void print_usage()
@@ -154,7 +147,7 @@ fn bool parse_args(String[] args, String* expr, bool* has_expr, String* file, bo
     return true;
 }
 
-fn void process_file(String file)
+fn void process_file(String file, symbol_table::SymbolTable* syms)
 {
     char[]? content = io::file::load_temp(file);
     if (catch err = content)
@@ -167,22 +160,27 @@ fn void process_file(String file)
     String[] lines = ((String)content).tsplit("\n", 0, true);
     foreach (line : lines)
     {
-        process(line.trim());
+        process_line(line.trim(), tmem, syms);
     }
 }
 
 fn void run_repl()
 {
-    while (true)
+    @pool()
     {
-        String? line = io::treadline(io::stdin());
-        if (catch err = line)
+        symbol_table::SymbolTable syms;
+        syms.init(tmem);
+        while (true)
         {
-            if (err == io::EOF) break;
-            return;
+            String? line = io::treadline(io::stdin());
+            if (catch err = line)
+            {
+                if (err == io::EOF) break;
+                return;
+            }
+            io::print(process_to_string(line.trim(), tmem, &syms));
         }
-        process(line.trim());
-    }
+    };
 }
 
 fn void main(String[] args)
@@ -194,12 +192,22 @@ fn void main(String[] args)
     if (!parse_args(args, &expr, &has_expr, &file, &has_file)) return;
     if (has_file)
     {
-        process_file(file);
+        @pool()
+        {
+            symbol_table::SymbolTable syms;
+            syms.init(tmem);
+            process_file(file, &syms);
+        };
         return;
     }
     if (has_expr)
     {
-        process(expr);
+        @pool()
+        {
+            symbol_table::SymbolTable syms;
+            syms.init(tmem);
+            io::print(process_to_string(expr, tmem, &syms));
+        };
         return;
     }
     run_repl();

@@ -83,6 +83,12 @@ fn Token? Lexer.next(&self) {
             return @mk_token(LPAREN, {self.eat()}, start);
         case ')':
             return @mk_token(RPAREN, {self.eat()}, start);
+        case '{':
+            return @mk_token(LBRACE, {self.eat()}, start);
+        case '}':
+            return @mk_token(RBRACE, {self.eat()}, start);
+        case '=':
+            return @mk_token(EQ, {self.eat()}, start);
         case '+':
             return @mk_token(PLUS, {self.eat()}, start);
         case '-':
@@ -94,6 +100,16 @@ fn Token? Lexer.next(&self) {
         case '%':
             return @mk_token(MOD, {self.eat()}, start);
         default:
+            if (ascii::@is_alpha(ch) || ch == '_') {
+                sz start_pos = self.pos;
+                while (!self.@is_eof() && (ascii::@is_alnum(self.peek()) || self.peek() == '_')) {
+                    self.eat();
+                }
+                String name = self.input[start_pos..self.pos - 1];
+                Token t = @mk_token(IDENT, {}, start);
+                t.name = name;
+                return t;
+            }
             if (ascii::@is_digit(ch)) {
                 int? num = self.eat_int();
                 if (catch err = num) return err~;

@@ -121,3 +121,39 @@ fn void test_parse_error_unexpected_token() @test {
         test::eq(res.error.msg, "Unexpected end of input");
     };
 }
+
+fn void test_parse_let() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("let x = 5", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(let x NUMBER(5))");
+    };
+}
+
+fn void test_parse_function_def() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("fn int sq(int n) { n * n }", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(fn sq(n) (IDENT(n) * IDENT(n)))");
+    };
+}
+
+fn void test_parse_call() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("sq(5)", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(sq NUMBER(5))");
+    };
+}
+
+fn void test_parse_call_no_args() @test {
+    @pool()
+    {
+        Result{ast::ASTNode, parser::ParseError} res = parser::parse("ask()", tmem);
+        test::@check(res.is_ok);
+        test::eq(string::tformat("%s", res.value), "(ask NUMBER(0))");
+    };
+}

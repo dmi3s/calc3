@@ -108,3 +108,31 @@ fn void test_overflow_consumes_digits() @test {
         { .kind = EOF, .ref = {1, 13} }
     });
 }
+
+fn void test_identifier() @test {
+    Lexer lex = @make_lexer("let x");
+    @verify_tokens(lex, {
+        { .kind = IDENT, .name = "let", .ref = {1, 1} },
+        { .kind = IDENT, .name = "x", .ref = {1, 5} },
+        { .kind = EOF, .ref = {1, 6} }
+    });
+}
+
+fn void test_keyword_and_symbol_tokens() @test {
+    Lexer lex = @make_lexer("fn int sq(int n) { n = 5 }");
+    @verify_tokens(lex, {
+        { .kind = IDENT, .name = "fn", .ref = {1, 1} },
+        { .kind = IDENT, .name = "int", .ref = {1, 4} },
+        { .kind = IDENT, .name = "sq", .ref = {1, 8} },
+        { .kind = LPAREN, .val = {'('}, .ref = {1, 10} },
+        { .kind = IDENT, .name = "int", .ref = {1, 11} },
+        { .kind = IDENT, .name = "n", .ref = {1, 15} },
+        { .kind = RPAREN, .val = {')'}, .ref = {1, 16} },
+        { .kind = LBRACE, .val = {'{'}, .ref = {1, 18} },
+        { .kind = IDENT, .name = "n", .ref = {1, 20} },
+        { .kind = EQ, .val = {'='}, .ref = {1, 22} },
+        { .kind = NUMBER, .val = {5}, .ref = {1, 24} },
+        { .kind = RBRACE, .val = {'}'}, .ref = {1, 26} },
+        { .kind = EOF, .ref = {1, 27} }
+    });
+}

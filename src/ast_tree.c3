@@ -85,6 +85,48 @@ fn void ASTreeVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     self.ctx.depth--;
 }
 
+fn void ASTreeVisitor.visit_ident(&self, ASTIdent* node) @dynamic
+{
+    self.append_line(string::tformat("IDENT(%s) (%d:%d)",
+        node.name, node.ref.row, node.ref.col));
+}
+
+fn void ASTreeVisitor.visit_let(&self, ASTLet* node) @dynamic
+{
+    self.append_line(string::tformat("LET(%s) (%d:%d)",
+        node.name, node.ref.row, node.ref.col));
+    self.reserve_ancestors();
+    if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
+    self.ctx.depth++;
+    self.ctx.is_last = true;
+    node.value.accept(self);
+    self.ctx.depth--;
+}
+
+fn void ASTreeVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
+{
+    self.append_line(string::tformat("FN(%s,%s) (%d:%d)",
+        node.name, node.param, node.ref.row, node.ref.col));
+    self.reserve_ancestors();
+    if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
+    self.ctx.depth++;
+    self.ctx.is_last = true;
+    node.body.accept(self);
+    self.ctx.depth--;
+}
+
+fn void ASTreeVisitor.visit_call(&self, ASTCall* node) @dynamic
+{
+    self.append_line(string::tformat("CALL(%s) (%d:%d)",
+        node.name, node.ref.row, node.ref.col));
+    self.reserve_ancestors();
+    if (self.ctx.depth >= 1) self.ctx.ancestor_is_last[self.ctx.depth - 1] = self.ctx.is_last;
+    self.ctx.depth++;
+    self.ctx.is_last = true;
+    node.arg.accept(self);
+    self.ctx.depth--;
+}
+
 <*
  @require root != null : "Root node must not be null"
 *>

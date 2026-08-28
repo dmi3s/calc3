@@ -1,7 +1,9 @@
 module calc3::ast;
 import calc3::token;
+import calc3::symbol_table;
 import std::collections::result;
 import std::core;
+import std::core::string;
 import std::io;
 import std::math;
 
@@ -26,12 +28,14 @@ struct EvalContext
 struct EvalVisitor (ASTVisitor)
 {
     EvalContext* ctx;
+    symbol_table::SymbolTable* syms;
 }
 
-fn EvalVisitor make_eval_visitor(Allocator allocator)
+fn EvalVisitor make_eval_visitor(Allocator allocator, symbol_table::SymbolTable* syms)
 {
     EvalVisitor v;
     v.ctx = alloc::new(allocator, EvalContext, {});
+    v.syms = syms;
     return v;
 }
 
@@ -129,12 +133,74 @@ fn void EvalVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     self.apply_binary(node.op, left, right, node.ref);
 }
 
+fn void EvalVisitor.visit_ident(&self, ASTIdent* node) @dynamic
+{
+    VarSymbol*? v = self.syms.lookup_var(node.name);
+    if (catch err = v)
+    {
+        self.fail(node.ref, "Unknown variable");
+        return;
+    }
+    VarSymbol* vs = v;
+    self.ctx.result = vs.value;
+}
+
+fn void EvalVisitor.visit_let(&self, ASTLet* node) @dynamic
+{
+    node.value.accept(self);
+    if (self.ctx.failed) return;
+    int val = self.ctx.result;
+    self.syms.bind_var(node.name, val);
+    self.ctx.result = val;
+}
+
+fn void EvalVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
+{
+    self.syms.register_func(node.name, node.param, node.body);
+    self.ctx.result = 0;
+}
+
+fn void EvalVisitor.visit_call(&self, ASTCall* node) @dynamic
+{
+    if (node.name.compare_to("ask") == 0)
+    {
+        io::printf("? ");
+        String? line = io::treadline(io::stdin());
+        if (catch err = line)
+        {
+            self.fail(node.ref, "Input read failed");
+            return;
+        }
+        int? val = line.trim().to_int();
+        if (catch err = val)
+        {
+            self.fail(node.ref, "Invalid integer input");
+            return;
+        }
+        self.ctx.result = val;
+        return;
+    }
+    FunctionDef*? f = self.syms.lookup_func(node.name);
+    if (catch err = f)
+    {
+        self.fail(node.ref, "Unknown function");
+        return;
+    }
+    FunctionDef* func = f;
+    node.arg.accept(self);
+    if (self.ctx.failed) return;
+    int argval = self.ctx.result;
+    self.syms.push_call_scope(func.param, argval);
+    func.body.accept(self);
+    self.syms.pop_call_scope();
+}
+
 <*
  @require root != null : "Root node must not be null"
 *>
-fn Result{int, EvalError} eval(ASTNode root, Allocator allocator)
+fn Result{int, EvalError} eval(ASTNode root, Allocator allocator, symbol_table::SymbolTable* syms)
 {
-    EvalVisitor v = make_eval_visitor(allocator);
+    EvalVisitor v = make_eval_visitor(allocator, syms);
     root.accept(&v);
     if (v.ctx.failed) return result::err(v.ctx.error);
     return result::ok(v.ctx.result);

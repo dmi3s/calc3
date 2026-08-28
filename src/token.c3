@@ -4,7 +4,10 @@ import std::io;
 
 enum TokenKind : uint {
     NUMBER,
+    IDENT,
     LPAREN, RPAREN,
+    LBRACE, RBRACE,
+    EQ,
     MUL, DIV, MOD,
     PLUS, MINUS,
     EOF,
@@ -35,6 +38,7 @@ struct Token (Printable) {
     TokenKind kind;
     Value val;
     Ref ref;
+    String name;
 }
 
 fn bool Token.equals(&self, Token other) @operator(==) {
@@ -43,6 +47,9 @@ fn bool Token.equals(&self, Token other) @operator(==) {
     }
     if (self.kind == NUMBER) {
         return self.val.num == other.val.num;
+    }
+    if (self.kind == IDENT) {
+        return self.name.compare_to(other.name) == 0;
     }
     return self.val.c == other.val.c;
 }
@@ -55,6 +62,9 @@ fn sz? Token.to_format(&self, Formatter* f) @dynamic {
         case NUMBER:
             return f.printf("{ %s(%d), %d:%d }",
                 self.kind.description, self.val.num, self.ref.row, self.ref.col);
+        case IDENT:
+            return f.printf("{ %s(%s), %d:%d }",
+                self.kind.description, self.name, self.ref.row, self.ref.col);
         default:
             return f.printf("{ %s('%c'), %d:%d }",
                 self.kind.description, self.val.c, self.ref.row, self.ref.col);

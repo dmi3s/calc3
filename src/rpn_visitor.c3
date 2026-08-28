@@ -46,6 +46,29 @@ fn void RPNVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     self.append(op_symbol(node.op));
 }
 
+fn void RPNVisitor.visit_ident(&self, ASTIdent* node) @dynamic
+{
+    self.append(node.name);
+}
+
+fn void RPNVisitor.visit_let(&self, ASTLet* node) @dynamic
+{
+    node.value.accept(self);
+    self.append(string::tformat("LET(%s)", node.name));
+}
+
+fn void RPNVisitor.visit_fundef(&self, ASTFunDef* node) @dynamic
+{
+    node.body.accept(self);
+    self.append(string::tformat("FN(%s)", node.name));
+}
+
+fn void RPNVisitor.visit_call(&self, ASTCall* node) @dynamic
+{
+    node.arg.accept(self);
+    self.append(string::tformat("CALL(%s)", node.name));
+}
+
 <*
  @require root != null : "Root node must not be null"
 *>

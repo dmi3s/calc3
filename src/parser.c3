@@ -110,6 +110,35 @@ fn Result{ast::ASTNode, ParseError} Parser.primary(&self)
             if (self.failed) return result::err(self.error);
             return result::ok(ast::create_number(self.allocator, value, ref));
         }
+        case IDENT:
+        {
+            String name = self.current.name;
+            token::Ref ref = self.current.ref;
+            self.advance();
+            if (self.failed) return result::err(self.error);
+            if (self.current.kind == LPAREN)
+            {
+                self.advance();
+                if (self.failed) return result::err(self.error);
+                ast::ASTNode arg;
+                if (self.current.kind == RPAREN)
+                {
+                    arg = ast::create_number(self.allocator, 0, self.current.ref);
+                }
+                else
+                {
+                    arg = self.expression().@or_else(;r) { return r; };
+                }
+                if (self.current.kind != RPAREN)
+                {
+                    return result::err({ .ref = self.current.ref, .msg = "Expected ')'" });
+                }
+                self.advance();
+                if (self.failed) return result::err(self.error);
+                return result::ok(ast::create_call(self.allocator, name, arg, ref));
+            }
+            return result::ok(ast::create_ident(self.allocator, name, ref));
+        }
         case LPAREN:
         {
             self.advance();
@@ -130,6 +159,102 @@ fn Result{ast::ASTNode, ParseError} Parser.primary(&self)
     }
 }
 
+fn Result{ast::ASTNode, ParseError} Parser.let_stmt(&self)
+{
+    // current == 'let'
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != IDENT)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected variable name after 'let'" });
+    }
+    String name = self.current.name;
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != EQ)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '='" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode value = self.expression().@or_else(;r) { return r; };
+    if (self.failed) return result::err(self.error);
+    return result::ok(ast::create_let(self.allocator, name, value, self.current.ref));
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.fn_stmt(&self)
+{
+    // current == 'fn'
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    // return type (any identifier accepted for now)
+    if (self.current.kind != IDENT)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected return type" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != IDENT)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected function name" });
+    }
+    String name = self.current.name;
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != LPAREN)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '('" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    // parameter type
+    if (self.current.kind != IDENT)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected parameter type" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != IDENT)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected parameter name" });
+    }
+    String param = self.current.name;
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != RPAREN)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected ')'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != LBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '{'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    ast::ASTNode body = self.expression().@or_else(;r) { return r; };
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind != RBRACE)
+    {
+        return result::err({ .ref = self.current.ref, .msg = "Expected '}'" });
+    }
+    self.advance();
+    if (self.failed) return result::err(self.error);
+    return result::ok(ast::create_fundef(self.allocator, name, param, body, self.current.ref));
+}
+
+fn Result{ast::ASTNode, ParseError} Parser.program(&self)
+{
+    if (self.failed) return result::err(self.error);
+    if (self.current.kind == IDENT)
+    {
+        if (self.current.name.compare_to("let") == 0) return self.let_stmt();
+        if (self.current.name.compare_to("fn") == 0) return self.fn_stmt();
+    }
+    return self.expression();
+}
+
 fn Result{ast::ASTNode, ParseError} parse(String src, Allocator allocator)
 {
     Parser p;
@@ -139,7 +264,7 @@ fn Result{ast::ASTNode, ParseError} parse(String src, Allocator allocator)
     {
         return result::ok(ast::create_number(allocator, 0, p.current.ref));
     }
-    ast::ASTNode node = p.expression().@or_else(;r) { return r; };
+    ast::ASTNode node = p.program().@or_else(;r) { return r; };
     if (p.failed) return result::err(p.error);
     if (p.current.kind != EOF)
     {
