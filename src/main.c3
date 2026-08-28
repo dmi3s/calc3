@@ -91,12 +91,12 @@ fn void print_usage()
         "  calc3 -h | --help      Show this help\n");
 }
 
-fn void main(String[] args)
+fn bool parse_args(String[] args, String* expr, bool* has_expr, String* file, bool* has_file)
 {
-    String expr = "";
-    bool has_expr = false;
-    String file = "";
-    bool has_file = false;
+    *expr = "";
+    *has_expr = false;
+    *file = "";
+    *has_file = false;
     sz i = 1;
     bool end_options = false;
     while (i < args.len)
@@ -113,7 +113,7 @@ fn void main(String[] args)
             if (arg == "-h" || arg == "--help")
             {
                 print_usage();
-                return;
+                return false;
             }
             if (arg == "-f" || arg == "--file")
             {
@@ -122,10 +122,10 @@ fn void main(String[] args)
                     io::print("error: missing filename after ");
                     io::print(arg);
                     io::print("\n");
-                    return;
+                    return false;
                 }
-                file = args[i + 1];
-                has_file = true;
+                *file = args[i + 1];
+                *has_file = true;
                 i += 2;
                 continue;
             }
@@ -134,49 +134,45 @@ fn void main(String[] args)
                 io::print("error: unknown option ");
                 io::print(arg);
                 io::print("\n");
-                return;
+                return false;
             }
         }
-        if (has_expr)
+        if (*has_expr)
         {
             io::print("error: multiple expressions given\n");
-            return;
+            return false;
         }
-        expr = arg;
-        has_expr = true;
+        *expr = arg;
+        *has_expr = true;
         i += 1;
     }
-
-    if (has_file && has_expr)
+    if (*has_file && *has_expr)
     {
         io::print("error: provide either an expression or -f <file>, not both\n");
-        return;
+        return false;
     }
+    return true;
+}
 
-    if (has_file)
+fn void process_file(String file)
+{
+    char[]? content = io::file::load_temp(file);
+    if (catch err = content)
     {
-        char[]? content = io::file::load_temp(file);
-        if (catch err = content)
-        {
-            io::print("error: cannot read file: ");
-            io::print(file);
-            io::print("\n");
-            return;
-        }
-        String[] lines = ((String)content).tsplit("\n", 0, true);
-        foreach (line : lines)
-        {
-            process(line.trim());
-        }
+        io::print("error: cannot read file: ");
+        io::print(file);
+        io::print("\n");
         return;
     }
-
-    if (has_expr)
+    String[] lines = ((String)content).tsplit("\n", 0, true);
+    foreach (line : lines)
     {
-        process(expr);
-        return;
+        process(line.trim());
     }
+}
 
+fn void run_repl()
+{
     while (true)
     {
         String? line = io::treadline(io::stdin());
@@ -187,4 +183,24 @@ fn void main(String[] args)
         }
         process(line.trim());
     }
+}
+
+fn void main(String[] args)
+{
+    String expr = "";
+    bool has_expr = false;
+    String file = "";
+    bool has_file = false;
+    if (!parse_args(args, &expr, &has_expr, &file, &has_file)) return;
+    if (has_file)
+    {
+        process_file(file);
+        return;
+    }
+    if (has_expr)
+    {
+        process(expr);
+        return;
+    }
+    run_repl();
 }

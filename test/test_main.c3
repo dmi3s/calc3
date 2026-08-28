@@ -44,3 +44,59 @@ fn void test_process_to_string_number() @test {
             "42\n");
     };
 }
+
+fn void test_parse_args_single_expr() @test {
+    @pool()
+    {
+        String expr = "";
+        bool has_expr = false;
+        String file = "";
+        bool has_file = false;
+        bool cont = main::parse_args({ "calc3", "1 + 2" }, &expr, &has_expr, &file, &has_file);
+        test::eq(cont, true);
+        test::eq(has_expr, true);
+        test::eq(expr, "1 + 2");
+        test::eq(has_file, false);
+    };
+}
+
+fn void test_parse_args_file_option() @test {
+    @pool()
+    {
+        String expr = "";
+        bool has_expr = false;
+        String file = "";
+        bool has_file = false;
+        bool cont = main::parse_args({ "calc3", "-f", "input.txt" }, &expr, &has_expr, &file, &has_file);
+        test::eq(cont, true);
+        test::eq(has_file, true);
+        test::eq(file, "input.txt");
+        test::eq(has_expr, false);
+    };
+}
+
+fn void test_parse_args_double_dash_expr() @test {
+    @pool()
+    {
+        String expr = "";
+        bool has_expr = false;
+        String file = "";
+        bool has_file = false;
+        bool cont = main::parse_args({ "calc3", "--", "-5+8" }, &expr, &has_expr, &file, &has_file);
+        test::eq(cont, true);
+        test::eq(has_expr, true);
+        test::eq(expr, "-5+8");
+    };
+}
+
+fn void test_parse_args_unknown_option() @test {
+    @pool()
+    {
+        String expr = "";
+        bool has_expr = false;
+        String file = "";
+        bool has_file = false;
+        bool cont = main::parse_args({ "calc3", "--bogus" }, &expr, &has_expr, &file, &has_file);
+        test::eq(cont, false);
+    };
+}
