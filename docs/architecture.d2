@@ -1,0 +1,34 @@
+# Calc3 — Architecture overview
+
+direction: right
+
+cli: CLI (main.c3) {
+  shape: rectangle
+  style: { fill: "#e8f0fe"; font-color: "#1a3b8b" }
+}
+lexer: Lexer (lexer.c3)
+parser: Parser (parser.c3)
+tokens: "Token & Ref (token.c3)" {
+  shape: cylinder
+}
+ast: AST (ast.c3) {
+  shape: rectangle
+}
+visitors: Visitors {
+  shape: rectangle
+  style: { fill: "#e6f4ea" }
+  tree_v: "ASTreeVisitor (to_tree)"
+  rpn_v: "RPNVisitor (to_rpn)"
+  eval_v: "EvalVisitor (eval)"
+}
+out: "Output: AST / RPN / Result"
+
+cli -> lexer: "source text"
+lexer -> parser: "Token?"
+parser -> ast: "ASTNode"
+ast -> visitors: "accept(visitor)"
+visitors -> out: "String / int"
+
+lexer -> tokens: "uses"
+parser -> tokens: "uses"
+ast -> tokens: "uses (Ref)"
