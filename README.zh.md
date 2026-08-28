@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:8dd1695cb623b31c6a45c6c42053ecdd4b3268fde2523cef22d3ec6a981cdac1 -->
+<!-- source-hash: sha256:6fdaf9cccc966ff259dd97e3a73caa6054ac3422a391b98691b18db28e1fe8e7 -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -59,6 +59,40 @@ BIN(-) (1:14)
 -20
 ```
 
+## 示例：定义与调用函数
+
+除算术外，计算器还支持用户自定义函数以及内置的 `ask()`。交互方式仍为逐行：
+一行一条命令。
+
+```text
+fn int add(int a, int b) { a + b }
+add(2, 3)
+fn int fact(int n) { if (n <= 1) { 1 } else { n * fact(n - 1) } }
+fact(5)
+fn int sq(int n) { n * n }
+let x = sq(add(2, 3))
+x
+ask() + 1
+```
+
+计算结果（`Result` 字段）：
+
+| 输入 | 结果 |
+|------|------|
+| `add(2, 3)` | `5` |
+| `fact(5)` | `120` |
+| `x` | `25` |
+| `ask() + 1` | 打印 `? `，返回输入的整数 `+ 1` |
+
+函数头语法（前缀式，同 C3）：
+
+```ebnf
+function = "fn", Type, name, "(", [ Type, name, { ",", Type, name } ], ")", "{", expression, "}" ;
+```
+
+参数显式列出，并按值传递。目前仅支持 `int` 类型；参数个数不匹配会给出
+`Argument count mismatch`，未知类型会给出 `Unsupported type '...'`。
+
 ## 命令行用法
 
 程序支持多种运行模式：
@@ -114,12 +148,16 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
     `Result{int, EvalError}`：除以/取模零、整数溢出（包括 `INT_MIN / -1` 和 `-INT_MIN`）
     会连同位置一起返回错误。
 - **语法分析器（Parser）** — [src/parser.c3](src/parser.c3)：按照上面的文法进行递归下降，
-  遵循优先级和结合性；构建 AST，支持一元运算符和括号。错误会连同描述和位置一起返回。
+  遵循优先级和结合性；构建 AST，支持一元运算符、括号、`let` 绑定以及函数的定义与
+  调用（`fn`）。错误会连同描述和位置一起返回。
+- **符号表（Symbol table）** — [src/symbol_table.c3](src/symbol_table.c3)：单一全局命名空间加上
+  用于参数与递归的临时调用帧；存储变量（`let`）与函数定义（`fn`）；内置的 `ask()`
+  以 `? ` 提示从 stdin 读取 `int`。
 - **程序入口** — [src/main.c3](src/main.c3)：实现命令行参数解析（`parse_args`）、
   交互式 REPL（`run_repl`）以及从文件读取表达式（`process_file`）；对每个表达式打印 AST、RPN 和计算结果
   （或错误信息）。输入 “?” 时输出数字 42。
 - **测试** — [test/](test/)：针对词法分析器、AST、语法分析器、eval 和程序入口的单元测试
-  （74 个测试）。运行方式：`c3c test calc3`。
+  （92 个测试）。运行方式：`c3c test calc3`。
 
 暂不规划：词法分析器/语法分析器在出错后的恢复。
 
@@ -215,7 +253,7 @@ HTML 注释，包含源文件的 sha256：
 
 **成果。**
 正式流水线 `文本 → 记号 → AST → RPN/值` 已完整实现。共有 8 个源代码模块，
-由 74 个单元测试覆盖。提供三种运行模式（REPL、文件、单条表达式），以及带参数
+由 92 个单元测试覆盖。提供三种运行模式（REPL、文件、单条表达式），以及带参数
 解析的命令行界面。文档已翻译成三种语言，架构部分配有图表与 PDF。
 
 **给偶然访客的总体印象。**

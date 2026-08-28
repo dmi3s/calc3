@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:8dd1695cb623b31c6a45c6c42053ecdd4b3268fde2523cef22d3ec6a981cdac1 -->
+<!-- source-hash: sha256:6fdaf9cccc966ff259dd97e3a73caa6054ac3422a391b98691b18db28e1fe8e7 -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -61,6 +61,41 @@ BIN(-) (1:14)
 -20
 ```
 
+## Example: defining and calling functions
+
+Beyond arithmetic, the calculator supports user-defined functions and the built-in
+`ask()`. Interaction is still line-by-line: one command per line.
+
+```text
+fn int add(int a, int b) { a + b }
+add(2, 3)
+fn int fact(int n) { if (n <= 1) { 1 } else { n * fact(n - 1) } }
+fact(5)
+fn int sq(int n) { n * n }
+let x = sq(add(2, 3))
+x
+ask() + 1
+```
+
+Evaluation result (the `Result` field):
+
+| Input | Result |
+|-------|--------|
+| `add(2, 3)` | `5` |
+| `fact(5)` | `120` |
+| `x` | `25` |
+| `ask() + 1` | prints `? `, returns the entered integer `+ 1` |
+
+Header syntax (prefix, like in C3):
+
+```ebnf
+function = "fn", Type, name, "(", [ Type, name, { ",", Type, name } ], ")", "{", expression, "}" ;
+```
+
+Parameters are listed explicitly and passed by value. Only the `int` type is supported
+for now; a mismatched argument count yields `Argument count mismatch`, and an unknown
+type yields `Unsupported type '...'`.
+
 ## Command-line usage
 
 The program supports several run modes:
@@ -118,13 +153,17 @@ traversal — both to output reverse Polish notation and to evaluate expressions
     `Result{int, EvalError}`: division/modulo by zero, integer overflow
     (including `INT_MIN / -1` and `-INT_MIN`) produce an error with a position.
 - **Parser** — [src/parser.c3](src/parser.c3): recursive descent over the grammar (see above) respecting
-  precedence and associativity; builds the AST, supports unary operators and parentheses.
-  Errors are returned together with a description and position.
+  precedence and associativity; builds the AST, supports unary operators, parentheses, `let`
+  binding, and function definition/calls (`fn`). Errors are returned together with a description
+  and position.
+- **Symbol table** — [src/symbol_table.c3](src/symbol_table.c3): a single global namespace plus
+  ephemeral call frames for parameters and recursion; stores variables (`let`) and function
+  definitions (`fn`); the built-in `ask()` reads an `int` from stdin with the `? ` prompt.
 - **Entry point** — [src/main.c3](src/main.c3): implements command-line argument parsing
   (`parse_args`), the interactive REPL (`run_repl`) and reading expressions from a file (`process_file`);
   for each expression it prints the AST, RPN and the evaluated value (or an error message). In response to "?" it prints 42.
 - **Tests** — [test/](test/): unit tests for the lexer, AST, parser, eval and the entry point
-  (74 tests). Run with `c3c test calc3`.
+  (92 tests). Run with `c3c test calc3`.
 
 Not planned: recovery of the lexer/parser after errors.
 
@@ -225,7 +264,7 @@ The project is distributed under the MIT license.
 
 **Achievements.**
 The formal pipeline `text → tokens → AST → RPN/value` is fully implemented.
-There are 8 source modules covered by 74 unit tests. Three run modes are
+There are 8 source modules covered by 92 unit tests. Three run modes are
 available (REPL, file, single expression) plus a CLI with argument parsing.
 Documentation is translated into three languages, and the architecture is
 documented with diagrams and a PDF.
