@@ -30,6 +30,36 @@ using a relatively new programming language as an example, for which there are s
   $ c3c test calc3
   ```
 
+# Input and output example
+
+Interaction with the program is line-by-line: you type an expression and get the AST,
+reverse Polish notation and the computed value. Example (all operator kinds are used —
+`+ - * / %`, unary minus and parentheses):
+
+```text
+$ ./build/calc3
+-(2 + 3) * 4 - 6 / 2 % 3
+=== AST (Abstract syntax tree) ===
+BIN(-) (1:14)
+├── BIN(*) (1:10)
+│   ├── UNARY(-) (1:1)
+│   │   └── BIN(+) (1:5)
+│   │       ├── NUM(2) (1:3)
+│   │       └── NUM(3) (1:7)
+│   └── NUM(4) (1:12)
+└── BIN(%) (1:22)
+    ├── BIN(/) (1:18)
+    │   ├── NUM(6) (1:16)
+    │   └── NUM(2) (1:20)
+    └── NUM(3) (1:24)
+
+=== RPN (Reverse Polish notation) ===
+2 3 + NEG 4 * 6 2 / 3 % -
+
+=== Result (Eval) ===
+-20
+```
+
 ## Calculator Syntax
 
 ```ebnf
