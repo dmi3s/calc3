@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:c15247a5f2376e5d878265d42db4cf5e96781d9249bbbf24d21daa2a6bff300a -->
+<!-- source-hash: sha256:58c10fa612ffc6feb641e4890ba8dca0ea02226f045449ebe222e47b6358c20d -->
 [English](README.md) | [Русский](README.ru.md) | 中文
 
 # Calc3 — 基于 C3 语言的入门计算器项目
@@ -122,6 +122,10 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
   （74 个测试）。运行方式：`c3c test calc3`。
 
 暂不规划：词法分析器/语法分析器在出错后的恢复。
+
+# 文档
+
+- 架构 — [PDF](docs/architecture.zh.pdf) · [源代码（Typst）](docs/architecture.zh.typ)
 
 # 项目结构
 

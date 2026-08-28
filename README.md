@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:c15247a5f2376e5d878265d42db4cf5e96781d9249bbbf24d21daa2a6bff300a -->
+<!-- source-hash: sha256:58c10fa612ffc6feb641e4890ba8dca0ea02226f045449ebe222e47b6358c20d -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -127,6 +127,10 @@ traversal — both to output reverse Polish notation and to evaluate expressions
   (74 tests). Run with `c3c test calc3`.
 
 Not planned: recovery of the lexer/parser after errors.
+
+# Documentation
+
+- Architecture — [PDF](docs/architecture.pdf) · [source (Typst)](docs/architecture.typ)
 
 # Project structure
 
