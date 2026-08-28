@@ -14,7 +14,7 @@ struct ParseError (Printable)
 
 fn sz? ParseError.to_format(&self, Formatter* f) @dynamic
 {
-    return f.printf("ParseError(%s at %d:%d)", self.msg, self.ref.row, self.ref.col);
+    return f.printf("%s", token::format_ref_error("ParseError", self.ref, self.msg));
 }
 
 struct Parser
@@ -146,29 +146,4 @@ fn Result{ast::ASTNode, ParseError} parse(String src, Allocator allocator)
         return result::err({ .ref = p.current.ref, .msg = "Unexpected trailing token" });
     }
     return result::ok(node);
-}
-
-struct ASTestVisitor (ast::ASTVisitor)
-{
-    void* dummy;
-}
-
-fn void ASTestVisitor.visit_number(&self, ast::ASTNumber* node) @dynamic
-{
-    io::printf("Number: %d\n", node.value);
-}
-
-fn void ASTestVisitor.visit_unary(&self, ast::ASTUnary* node) @dynamic
-{
-    io::printf("Unary \"%s\":\n", ast::op_symbol(node.op));
-    node.operand.accept(self);
-}
-
-fn void ASTestVisitor.visit_binary(&self, ast::ASTBinary* node) @dynamic
-{
-    io::printf("Binary \"%s\":\n", ast::op_symbol(node.op));
-    io::printf("left:\n");
-    node.left.accept(self);
-    io::printf("right:\n");
-    node.right.accept(self);
 }

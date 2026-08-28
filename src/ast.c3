@@ -101,3 +101,28 @@ fn ASTNode create_binary(Allocator allocator, token::TokenKind op, ASTNode left,
     });
     return (ASTNode)node;
 }
+
+struct ASTestVisitor (ast::ASTVisitor)
+{
+    void* dummy;
+}
+
+fn void ASTestVisitor.visit_number(&self, ast::ASTNumber* node) @dynamic
+{
+    io::printf("Number: %d\n", node.value);
+}
+
+fn void ASTestVisitor.visit_unary(&self, ast::ASTUnary* node) @dynamic
+{
+    io::printf("Unary \"%s\":\n", op_symbol(node.op));
+    node.operand.accept(self);
+}
+
+fn void ASTestVisitor.visit_binary(&self, ast::ASTBinary* node) @dynamic
+{
+    io::printf("Binary \"%s\":\n", op_symbol(node.op));
+    io::printf("left:\n");
+    node.left.accept(self);
+    io::printf("right:\n");
+    node.right.accept(self);
+}

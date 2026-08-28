@@ -169,3 +169,14 @@ fn void test_rpn_simple_binop() @test {
         test::eq(ast::to_rpn(n, tmem), "1 2 +");
     };
 }
+
+fn void test_astest_visitor() @test {
+    @pool()
+    {
+        ast::ASTNode left = ast::create_number(tmem, 1, {1, 1});
+        ast::ASTNode right = ast::create_number(tmem, 2, {1, 3});
+        ast::ASTNode n = ast::create_binary(tmem, token::TokenKind.PLUS, left, right, {1, 2});
+        ast::ASTestVisitor v;
+        n.accept(&v);
+    };
+}

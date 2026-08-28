@@ -19,6 +19,10 @@ fn bool Ref.equals(&self, Ref other) @operator(==) {
     return self.row == other.row && self.col == other.col;
 }
 
+fn String format_ref_error(String kind, Ref ref, String msg) {
+    return string::tformat("%s(%s at %d:%d)", kind, msg, ref.row, ref.col);
+}
+
 alias ValueInt = int;
 alias ValueChar = char;
 

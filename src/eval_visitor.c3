@@ -13,7 +13,7 @@ struct EvalError (Printable)
 
 fn sz? EvalError.to_format(&self, Formatter* f) @dynamic
 {
-    return f.printf("EvalError(%s at %d:%d)", self.msg, self.ref.row, self.ref.col);
+    return f.printf("%s", token::format_ref_error("EvalError", self.ref, self.msg));
 }
 
 struct EvalContext

@@ -85,11 +85,6 @@ fn void ASTreeVisitor.visit_binary(&self, ASTBinary* node) @dynamic
     self.ctx.depth--;
 }
 
-fn String ASTreeVisitor.to_string(&self)
-{
-    return self.ctx.out.str_view();
-}
-
 <*
  @require root != null : "Root node must not be null"
 *>
@@ -97,5 +92,5 @@ fn String to_tree(ASTNode root, Allocator allocator)
 {
     ASTreeVisitor v = make_tree_visitor(allocator);
     root.accept(&v);
-    return v.to_string();
+    return v.ctx.out.str_view().copy(allocator);
 }
