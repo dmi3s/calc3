@@ -87,29 +87,29 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 The project implements the formal goal: tokenizer, parser, AST construction and tree
 traversal — both to output reverse Polish notation and to evaluate expressions.
 
-- **Tokens** — `src/token.c3`: token kinds (number, operators, parentheses, end of input),
+- **Tokens** — [src/token.c3](src/token.c3): token kinds (number, operators, parentheses, end of input),
   the token's value and its position in the source.
-- **Lexer** — `src/lexer.c3`: splits the text into tokens, skips whitespace, tracks the
+- **Lexer** — [src/lexer.c3](src/lexer.c3): splits the text into tokens, skips whitespace, tracks the
   position (row/column), catches integer overflow and unknown characters. On an error the
   lexer "reads through" the offending fragment and returns in a state as if it is ready to
   continue parsing — however, recovery from failures is not implemented yet and is not even
   planned.
-- **AST** — `src/ast.c3`: an abstract syntax tree with three kinds of nodes —
+- **AST** — [src/ast.c3](src/ast.c3): an abstract syntax tree with three kinds of nodes —
   a number, a unary and a binary operation. Nodes can accept a visitor and be printed.
 - **Visitors** — the Visitor pattern for tree traversal:
-  - `src/ast.c3` — a demonstration visitor that prints nodes;
-  - `src/ast_tree.c3` — `ast::to_tree()`: renders the AST as a tree (eza -T style);
-  - `src/rpn_visitor.c3` — `ast::to_rpn()`: outputs reverse Polish notation
+  - [src/ast.c3](src/ast.c3) — a demonstration visitor that prints nodes;
+  - [src/ast_tree.c3](src/ast_tree.c3) — `ast::to_tree()`: renders the AST as a tree (eza -T style);
+  - [src/rpn_visitor.c3](src/rpn_visitor.c3) — `ast::to_rpn()`: outputs reverse Polish notation
     (unary minus — `NEG`, unary plus — `POS`);
-  - `src/eval_visitor.c3` — `ast::eval()`: evaluates the expression. Returns
+  - [src/eval_visitor.c3](src/eval_visitor.c3) — `ast::eval()`: evaluates the expression. Returns
     `Result{int, EvalError}`: division/modulo by zero, integer overflow
     (including `INT_MIN / -1` and `-INT_MIN`) produce an error with a position.
-- **Parser** — `src/parser.c3`: recursive descent over the grammar (see above) respecting
+- **Parser** — [src/parser.c3](src/parser.c3): recursive descent over the grammar (see above) respecting
   precedence and associativity; builds the AST, supports unary operators and parentheses.
   Errors are returned together with a description and position.
-- **Entry point** — `src/main.c3`: reads expressions from stdin and prints, for each line,
+- **Entry point** — [src/main.c3](src/main.c3): reads expressions from stdin and prints, for each line,
   the RPN and the evaluated value (or an error message). In response to "?" it prints 42.
-- **Tests** — `test/`: unit tests for the lexer, AST, parser, eval and the entry point
+- **Tests** — [test/](test/): unit tests for the lexer, AST, parser, eval and the entry point
   (67 tests). Run with `c3c test calc3`.
 
 Not planned: recovery of the lexer/parser after errors.

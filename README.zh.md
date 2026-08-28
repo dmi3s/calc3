@@ -85,26 +85,26 @@ digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 项目已实现正式目标：词法分析器、语法分析器、AST 构建与树的遍历——既用于输出逆波兰表达式，
 也用于计算表达式的值。
 
-- **Token（记号）** — `src/token.c3`：记号类型（数字、运算符、括号、输入结束）、
+- **Token（记号）** — [src/token.c3](src/token.c3)：记号类型（数字、运算符、括号、输入结束）、
   记号的值及其在源码中的位置。
-- **词法分析器（Lexer）** — `src/lexer.c3`：把文本拆分为记号，跳过空白字符，
+- **词法分析器（Lexer）** — [src/lexer.c3](src/lexer.c3)：把文本拆分为记号，跳过空白字符，
   跟踪位置（行/列），捕获整数溢出和未知字符。出错时，词法分析器会“读完”出问题的片段，
   并以“好像可以继续解析”的状态返回——不过，失败后的恢复目前尚未实现，也暂时没有计划。
-- **AST** — `src/ast.c3`：抽象语法树，包含三种节点——数字、一元运算和二元运算。
+- **AST** — [src/ast.c3](src/ast.c3)：抽象语法树，包含三种节点——数字、一元运算和二元运算。
   节点可以接受访问者（visitor），也可以被打印。
 - **访问者（Visitor）** — 用于遍历树的访问者模式：
-  - `src/ast.c3` — 打印节点的演示访问者；
-  - `src/ast_tree.c3` — `ast::to_tree()`：以树状形式输出 AST（eza -T 风格）；
-  - `src/rpn_visitor.c3` — `ast::to_rpn()`：输出逆波兰表达式（一元负号 — `NEG`，
+  - [src/ast.c3](src/ast.c3) — 打印节点的演示访问者；
+  - [src/ast_tree.c3](src/ast_tree.c3) — `ast::to_tree()`：以树状形式输出 AST（eza -T 风格）；
+  - [src/rpn_visitor.c3](src/rpn_visitor.c3) — `ast::to_rpn()`：输出逆波兰表达式（一元负号 — `NEG`，
     一元正号 — `POS`）；
-  - `src/eval_visitor.c3` — `ast::eval()`：计算表达式的值。返回
+  - [src/eval_visitor.c3](src/eval_visitor.c3) — `ast::eval()`：计算表达式的值。返回
     `Result{int, EvalError}`：除以/取模零、整数溢出（包括 `INT_MIN / -1` 和 `-INT_MIN`）
     会连同位置一起返回错误。
-- **语法分析器（Parser）** — `src/parser.c3`：按照上面的文法进行递归下降，
+- **语法分析器（Parser）** — [src/parser.c3](src/parser.c3)：按照上面的文法进行递归下降，
   遵循优先级和结合性；构建 AST，支持一元运算符和括号。错误会连同描述和位置一起返回。
-- **程序入口** — `src/main.c3`：从 stdin 读取表达式，对每一行打印 RPN 和计算出的值
+- **程序入口** — [src/main.c3](src/main.c3)：从 stdin 读取表达式，对每一行打印 RPN 和计算出的值
   （或错误信息）。输入 “?” 时输出数字 42。
-- **测试** — `test/`：针对词法分析器、AST、语法分析器、eval 和程序入口的单元测试
+- **测试** — [test/](test/)：针对词法分析器、AST、语法分析器、eval 和程序入口的单元测试
   （67 个测试）。运行方式：`c3c test calc3`。
 
 暂不规划：词法分析器/语法分析器在出错后的恢复。
