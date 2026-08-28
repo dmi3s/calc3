@@ -1,4 +1,4 @@
-// source-hash: sha256:75f301ab65f6ef6b195bcdc11fc2ddaa9fd4f4ef6fcdffb03b4b7d7b07adbd42
+// source-hash: sha256:f96ee9fc47a1498c294753681dc883195220c33fcf0fe0148231a6f78001dff1
 #set text(font: ("New Computer Modern", "Noto Sans CJK SC"))
 
 = calc3 — 项目架构
@@ -27,17 +27,18 @@ _用 C3 编写的学习用计算器：词法分析器、递归下降解析、AST
   [*模块*], [*职责*],
   [`token.c3`], [词法单元类型（`TokenKind`）、词法单元值（`Value`）、位置（`Ref`），以及共享的错误格式化辅助函数 `format_ref_error`。],
   [`lexer.c3`], [将源码文本转换为词法单元流（`Lexer.next`），跟踪 `Ref`，并捕获未知字符与整数溢出。],
-  [`ast.c3`], [树节点（`ASTNumber`、`ASTUnary`、`ASTBinary`）、`ASTNode`/`ASTVisitor` 接口、工厂函数以及演示用的 `ASTestVisitor`。],
-  [`ast_tree.c3`], [访问者 `ASTreeVisitor` + `to_tree` —— 将 AST 渲染为树状结构（风格类似 `eza -T`）。],
-  [`rpn_visitor.c3`], [访问者 `RPNVisitor` + `to_rpn` —— 生成逆波兰表示法（一元运算符对应 `NEG`/`POS`）。],
-  [`eval_visitor.c3`], [访问者 `EvalVisitor` + `eval` —— 计算值，返回 `Result{int, EvalError}`。],
-  [`parser.c3`], [基于语法的递归下降（`parse`），构建 AST，并报告带位置的 `ParseError`。],
-  [`main.c3`], [入口点：命令行参数解析、REPL、文件读取以及组装最终输出。],
+   [`ast.c3`], [树节点（`ASTNumber`、`ASTUnary`、`ASTBinary`、`ASTIdent`、`ASTLet`、`ASTFunDef`、`ASTCall`）、`ASTNode`/`ASTVisitor` 接口、工厂函数以及演示用的 `ASTestVisitor`。],
+   [`ast_tree.c3`], [访问者 `ASTreeVisitor` + `to_tree` —— 将 AST 渲染为树状结构（风格类似 `eza -T`）。],
+   [`rpn_visitor.c3`], [访问者 `RPNVisitor` + `to_rpn` —— 生成逆波兰表示法（一元运算符对应 `NEG`/`POS`）。],
+   [`eval_visitor.c3`], [访问者 `EvalVisitor` + `eval` —— 计算值，返回 `Result{int, EvalError}`；透传 `SymbolTable*`。],
+   [`parser.c3`], [基于语法的递归下降（`parse`）：算术、`let`、函数的定义与调用（`fn`），并报告带位置的 `ParseError`。],
+   [`symbol_table.c3`], [符号表：全局命名空间、用于参数与递归的调用帧、变量（`let`）与函数（`fn`）的存储，以及内置的 `ask()`。],
+   [`main.c3`], [入口点：命令行参数解析、REPL、文件读取以及组装最终输出。],
 )
 
 == 词法单元表示（`token.c3`）
 
-- `TokenKind` 是一个枚举：`NUMBER`、`PLUS`、`MINUS`、`MUL`、`DIV`、`MOD`、`LPAREN`、`RPAREN`、`EOF`，以及错误值 `UNKNOWN_CHAR`、`OVERFLOW`。
+- `TokenKind` 是一个枚举：`NUMBER`、`IDENT`、`LPAREN`、`RPAREN`、`LBRACE`、`RBRACE`、`COMMA`、`EQ`、`PLUS`、`MINUS`、`MUL`、`DIV`、`MOD`、`EOF`，以及错误值 `UNKNOWN_CHAR`、`OVERFLOW`。
 - `Token` 为 `{ kind, val: Value, ref: Ref }`，其中 `Value` 是联合体（数字或字符）。
 - `Ref` 为 `{ int row, int col }`，是错误坐标的唯一来源。
 - `format_ref_error(String kind, Ref ref, String msg)` 是共享模板 `"<kind>(<msg> at <row>:<col>)"`，被 `ParseError` 与 `EvalError` 共同使用。
@@ -50,8 +51,8 @@ _用 C3 编写的学习用计算器：词法分析器、递归下降解析、AST
 == AST 与访问者模式（`ast.c3`）
 
 - `ASTNode` 接口要求实现 `accept(ASTVisitor)` 与 `to_format`（用于 `Printable`）。
-- `ASTVisitor` 接口包含 `visit_number` / `visit_unary` / `visit_binary`。
-- 节点：`ASTNumber { ref, value }`、`ASTUnary { ref, op, operand }`、`ASTBinary { ref, op, left, right }`。每个 `accept` 会调用对应的 `visit_*`。
+- `ASTVisitor` 接口包含 `visit_number` / `visit_unary` / `visit_binary` / `visit_ident` / `visit_let` / `visit_fundef` / `visit_call`。
+- 节点：`ASTNumber { ref, value }`、`ASTUnary { ref, op, operand }`、`ASTBinary { ref, op, left, right }`、`ASTIdent { ref, name }`、`ASTLet { ref, name, value }`、`ASTFunDef { ref, name, ret_type, params, body }`、`ASTCall { ref, name, args, argc }`。每个 `accept` 会调用对应的 `visit_*`。
 - 工厂函数 `create_number` / `create_unary` / `create_binary` 分配节点并以 `ASTNode` 返回。`op_symbol` 将运算符的 `TokenKind` 映射为符号。
 - `ASTestVisitor` 是一个演示用访问者，打印节点结构（用于测试）。
 
@@ -67,7 +68,7 @@ _用 C3 编写的学习用计算器：词法分析器、递归下降解析、AST
 
 == 语法分析器（`parser.c3`）
 
-- `parse(String src, Allocator allocator) -> Result{ASTNode, ParseError}` —— 递归下降：`expression → term → factor → primary`，遵循优先级与结合性，并支持一元 `+`/`-` 与括号。
+- `parse(String src, Allocator allocator) -> Result{ASTNode, ParseError}` —— 递归下降：`expression → term → factor → primary`，遵循优先级与结合性，并支持一元 `+`/`-` 与括号。此外还识别 `let <名字> = <表达式>`、函数定义 `fn <类型> <名字>(<类型> <参数>, ...) { <表达式> }` 以及调用 `<名字>(<实参>, ...)`（含内置的 `ask()`）。
 - `ParseError` 持有 `Ref` 与消息；其 `to_format` 委托给 `token::format_ref_error("ParseError", ...)`。
 
 == 错误处理
@@ -79,11 +80,23 @@ _用 C3 编写的学习用计算器：词法分析器、递归下降解析、AST
 
 共享的 `token::format_ref_error` 保证格式一致且带有坐标。
 
+== 符号表与函数（`symbol_table.c3`）
+
+`SymbolTable` 保留一个全局命名空间（`global`）以及用于参数与递归的临时调用帧（深度为 `MAX_CALL_DEPTH = 256` 的固定数组）：
+
+- `VarSymbol { int value }` —— 变量的值；由 `let` 指令在执行时于当前作用域绑定（允许重新绑定）。
+- `FunctionDef { Type ret_type, Param[16] params, usz param_count, ASTNode body }` —— 函数定义；`Param { Type type, String name }`；目前仅支持 `int` 类型。
+- `register_func`、`lookup_func`、`bind_var`、`lookup_var`、`push_call_scope`、`pop_call_scope` —— 注册/查找函数与变量，并在调用时压入/弹出调用帧（参数按值绑定）。
+- `ask()` —— 内置函数：打印 `? ` 并从 stdin 读取 `int`。
+
+递归之所以可行，是因为每次调用都会把自己的参数帧叠放在调用栈之上。函数目前**还不是一等公民**——不能作为参数传递，也不能从其他函数返回。
+
 == 入口点与命令行（`main.c3`）
 
 `pipeline(String src, Allocator) -> Result{PipelineOk, ParseError}` 将 `parse` + `to_rpn` + `eval` 组合在一起，在一次遍历中返回节点、RPN 与结果。在其之上：
 
-- `process_line(src, allocator)` —— 简短的 `RPN\n结果` 输出（用于测试）；输入 `?` 时返回 `42`。
+- `process_line(src, allocator)` —— 简短的 `RPN\n结果` 输出（用于测试）。
+- 内置函数 `ask()` 会打印 `? ` 提示符，并从 stdin 读取 `int`。
 - `process_to_string(src, allocator)` —— 完整的 `AST / RPN / Result` 块。
 - `process(src)` —— 在内存池（`@pool` + `tmem`）中打印 `process_to_string` 的结果。
 
@@ -147,5 +160,5 @@ BIN(-) (1:14)
 ```
 c3c build calc3      # 构建（debug）
 c3c build calc3 -O2 -g0   # 发布（release）
-c3c test calc3       # 74 个单元测试（词法分析器、AST、语法分析器、eval、入口点）
+c3c test calc3       # 92 个单元测试（词法分析器、AST、语法分析器、eval、符号表、入口点）
 ```

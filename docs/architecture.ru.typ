@@ -27,17 +27,18 @@ _Учебный калькулятор на языке C3: токенизато�
   [*Модуль*], [*Назначение*],
   [`token.c3`], [Типы токенов (`TokenKind`), значение токена (`Value`), позиция (`Ref`) и общий помощник форматирования ошибок `format_ref_error`.],
   [`lexer.c3`], [Переводит исходный текст в поток токенов (`Lexer.next`), следит за `Ref`, ловит неизвестные символы и переполнение целых.],
-  [`ast.c3`], [Узлы дерева (`ASTNumber`, `ASTUnary`, `ASTBinary`), интерфейсы `ASTNode`/`ASTVisitor`, фабрики и демонстрационный `ASTestVisitor`.],
-  [`ast_tree.c3`], [Визитор `ASTreeVisitor` + `to_tree` — вывод AST в виде дерева (в стиле `eza -T`).],
-  [`rpn_visitor.c3`], [Визитор `RPNVisitor` + `to_rpn` — вывод в обратной польской записи (`NEG`/`POS` для унарных).],
-  [`eval_visitor.c3`], [Визитор `EvalVisitor` + `eval` — вычисление значения, возвращает `Result{int, EvalError}`.],
-  [`parser.c3`], [Рекурсивный спуск по грамматике (`parse`), построение AST, ошибки `ParseError` с позицией.],
-  [`main.c3`], [Точка входа: разбор аргументов CLI, REPL, чтение файла и формирование итогового вывода.],
+   [`ast.c3`], [Узлы дерева (`ASTNumber`, `ASTUnary`, `ASTBinary`, `ASTIdent`, `ASTLet`, `ASTFunDef`, `ASTCall`), интерфейсы `ASTNode`/`ASTVisitor`, фабрики и демонстрационный `ASTestVisitor`.],
+   [`ast_tree.c3`], [Визитор `ASTreeVisitor` + `to_tree` — вывод AST в виде дерева (в стиле `eza -T`).],
+   [`rpn_visitor.c3`], [Визитор `RPNVisitor` + `to_rpn` — вывод в обратной польской записи (`NEG`/`POS` для унарных).],
+   [`eval_visitor.c3`], [Визитор `EvalVisitor` + `eval` — вычисление значения, возвращает `Result{int, EvalError}`; пробрасывает `SymbolTable*`.],
+   [`parser.c3`], [Рекурсивный спуск по грамматике (`parse`): арифметика, `let`, определение и вызов функций (`fn`), ошибки `ParseError` с позицией.],
+   [`symbol_table.c3`], [Таблица символов: глобальное пространство имён, call-фреймы для параметров/рекурсии, хранение переменных (`let`) и функций (`fn`), встроенная `ask()`.],
+   [`main.c3`], [Точка входа: разбор аргументов CLI, REPL, чтение файла и формирование итогового вывода.],
 )
 
 == Представление токенов (`token.c3`)
 
-- `TokenKind` — перечисление: `NUMBER`, `PLUS`, `MINUS`, `MUL`, `DIV`, `MOD`, `LPAREN`, `RPAREN`, `EOF`, а также fault-значения `UNKNOWN_CHAR`, `OVERFLOW`.
+- `TokenKind` — перечисление: `NUMBER`, `IDENT`, `LPAREN`, `RPAREN`, `LBRACE`, `RBRACE`, `COMMA`, `EQ`, `PLUS`, `MINUS`, `MUL`, `DIV`, `MOD`, `EOF`, а также fault-значения `UNKNOWN_CHAR`, `OVERFLOW`.
 - `Token` — `{ kind, val: Value, ref: Ref }`, где `Value` — объединение (число или символ).
 - `Ref` — `{ int row, int col }`, единый источник координат ошибок.
 - `format_ref_error(String kind, Ref ref, String msg)` — общий шаблон
@@ -53,9 +54,12 @@ _Учебный калькулятор на языке C3: токенизато�
 == AST и паттерн Visitor (`ast.c3`)
 
 - Интерфейс `ASTNode` требует `accept(ASTVisitor)` и `to_format` (для `Printable`).
-- Интерфейс `ASTVisitor` — `visit_number` / `visit_unary` / `visit_binary`.
+- Интерфейс `ASTVisitor` — `visit_number` / `visit_unary` / `visit_binary` /
+  `visit_ident` / `visit_let` / `visit_fundef` / `visit_call`.
 - Узлы: `ASTNumber { ref, value }`, `ASTUnary { ref, op, operand }`,
-  `ASTBinary { ref, op, left, right }`. Каждый `accept` вызывает свой `visit_*`.
+  `ASTBinary { ref, op, left, right }`, `ASTIdent { ref, name }`,
+  `ASTLet { ref, name, value }`, `ASTFunDef { ref, name, ret_type, params, body }`,
+  `ASTCall { ref, name, args, argc }`. Каждый `accept` вызывает свой `visit_*`.
 - Фабрики `create_number` / `create_unary` / `create_binary` аллоцируют узел и возвращают
   как `ASTNode`. `op_symbol` преобразует `TokenKind` оператора в символ.
 - `ASTestVisitor` — демонстрационный визитор, печатающий структуру узлов (используется в тесте).
@@ -76,7 +80,9 @@ _Учебный калькулятор на языке C3: токенизато�
 
 - `parse(String src, Allocator allocator) -> Result{ASTNode, ParseError}` — рекурсивный спуск:
   `expression → term → factor → primary`, с учётом приоритетов и ассоциативности,
-  поддержкой унарных `+`/`-` и скобок.
+  поддержкой унарных `+`/`-` и скобок. Кроме того, распознаёт `let <имя> = <expr>`,
+  определение функций `fn <Тип> <имя>(<Тип> <п>, ...) { <expr> }` и вызовы
+  `<имя>(<арг>, ...)` (включая встроенную `ask()`).
 - `ParseError` хранит `Ref` и сообщение; `to_format` делегирует в
   `token::format_ref_error("ParseError", ...)`.
 
@@ -91,14 +97,33 @@ _Учебный калькулятор на языке C3: токенизато�
 
 Единый `token::format_ref_error` гарантирует одинаковый формат и наличие координат.
 
+== Таблица символов и функции (`symbol_table.c3`)
+
+`SymbolTable` хранит одно глобальное пространство имён (`global`) и эфемерные
+call-фреймы для параметров и рекурсии (фиксированный массив глубиной
+`MAX_CALL_DEPTH = 256`):
+
+- `VarSymbol { int value }` — значение переменной; связывается инструкцией `let`
+  во время вычисления в текущем scope (перепривязка разрешена).
+- `FunctionDef { Type ret_type, Param[16] params, usz param_count, ASTNode body }` —
+  определение функции; `Param { Type type, String name }`; пока поддержан только тип `int`.
+- `register_func`, `lookup_func`, `bind_var`, `lookup_var`, `push_call_scope`,
+  `pop_call_scope` — регистрация/поиск функций и переменных, а также создание и
+  снятие call-фрейма при вызове (параметры привязываются по значению).
+- `ask()` — встроенная функция: печатает `? ` и читает `int` из stdin.
+
+Рекурсия возможна благодаря тому, что каждый вызов накладывает свой фрейм с параметрами
+поверх стека вызовов. Функции пока **не являются объектами первого класса** — их нельзя
+передать как значение или вернуть из другой функции.
+
 == Точка входа и CLI (`main.c3`)
 
 Конвейер `pipeline(String src, Allocator) -> Result{PipelineOk, ParseError}`
 объединяет `parse` + `to_rpn` + `eval` и возвращает узел, RPN и результат за один проход.
 Поверх него:
 
-- `process_line(src, allocator)` — короткий вывод `RPN\nрезультат` (используется в тестах);
-  ввод `?` отвечает `42`.
+- `process_line(src, allocator)` — короткий вывод `RPN\nрезультат` (используется в тестах).
+- Встроенная функция `ask()` печатает приглашение `? ` и читает `int` из stdin.
 - `process_to_string(src, allocator)` — полный блок `AST / RPN / Result`.
 - `process(src)` — печатает результат `process_to_string` в пуле (`@pool` + `tmem`).
 
@@ -177,5 +202,5 @@ BIN(-) (1:14)
 ```
 c3c build calc3      # сборка (debug)
 c3c build calc3 -O2 -g0   # release
-c3c test calc3       # 74 модульных теста (лексер, AST, парсер, eval, точка входа)
+c3c test calc3       # 92 модульных теста (лексер, AST, парсер, eval, таблица символов, точка входа)
 ```

@@ -1,4 +1,4 @@
-<!-- source-hash: sha256:5bd25094a9db2e11ae31495b5b8cf8d11e08a3079723941b615cd13dc5bbba63 -->
+<!-- source-hash: sha256:ef21e375ed958b6200f8cf936ba97e90e5465eba5c13cc4349580f50e89f0eb8 -->
 English | [Русский](README.ru.md) | [中文](README.zh.md)
 
 # Calc3 — a learning calculator project in C3
@@ -120,6 +120,29 @@ INTEGER    = digit, { digit } ;
 digit      = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
 
 ```
+
+Beyond arithmetic, the language has name binding (`let`), function definition and
+calls (`fn`), and the built-in `ask()`:
+
+```ebnf
+statement  = let_stmt | fn_stmt | expression ;
+let_stmt   = "let", name, "=", expression ;
+fn_stmt    = "fn", Type, name, "(", [ Type, name, { ",", Type, name } ], ")", "{", expression, "}" ;
+call       = name, "(", [ expression, { ",", expression } ], ")" ;
+primary    = INTEGER | "(", expression, ")" | name | call | "ask", "(", ")" ;
+```
+
+- `let <name> = <expression>` — binding is evaluated at runtime in the current scope;
+  rebinding is allowed.
+- `fn <Type> <name>(<Type> <p1>, ...) { <body> }` — prefix header, like in C3; parameters
+  are passed by value. Only the `int` type is supported for now (an unknown type yields
+  `Unsupported type '...'`). Recursion works via ephemeral call frames. Functions are
+  **not first-class** yet.
+- call `<name>(<arg>, ...)` — a mismatch between the argument count and the parameter
+  count yields `Argument count mismatch`.
+- `ask()` — a built-in: prints the `? ` prompt and reads an `int` from stdin.
+
+See also the "Example: defining and calling functions" section above.
 
 ## Structure explanation
 
@@ -270,16 +293,17 @@ The project is distributed under the MIT license.
   lesser-known language for which there are few examples online.
 
 **Achievements.**
-The formal pipeline `text → tokens → AST → RPN/value` is fully implemented.
-There are 8 source modules covered by 92 unit tests. Three run modes are
-available (REPL, file, single expression) plus a CLI with argument parsing.
-Documentation is translated into three languages, and the architecture is
-documented with diagrams and a PDF.
+The formal pipeline `text → tokens → AST → RPN/value` is fully implemented, and on
+top of it: name binding (`let`), user-defined functions (`fn`, including recursion)
+and the built-in `ask()`. There are 9 source modules covered by 92 unit tests.
+Three run modes are available (REPL, file, single expression) plus a CLI with argument
+parsing. Documentation is translated into three languages, and the architecture is
+documented with diagrams and a PDF. Functions are not first-class yet — the project
+is experimental in nature.
 
 **General understanding for a random visitor.**
-Calc3 is not a "product" but a learning sandbox: a minimal yet complete
-calculator in C3 where each stage (lexer, parser, AST, visitors) is factored
+Calc3 is not a "product" but a learning sandbox: a minimal yet complete calculator
+in C3 where each stage (lexer, parser, AST, visitors, symbol table) is factored
 into its own module and covered by tests. It is a good starting point for
-understanding how an expression interpreter is built, while also getting to
-know C3. There is no explicit roadmap yet — the author considers the formal
-goal achieved.
+understanding how an expression interpreter is built, while also getting to know
+C3. The explicit direction of travel is to make functions first-class.

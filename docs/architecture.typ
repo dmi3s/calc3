@@ -1,4 +1,4 @@
-// source-hash: sha256:75f301ab65f6ef6b195bcdc11fc2ddaa9fd4f4ef6fcdffb03b4b7d7b07adbd42
+// source-hash: sha256:f96ee9fc47a1498c294753681dc883195220c33fcf0fe0148231a6f78001dff1
 = calc3 — Project Architecture
 
 _A learning calculator in C3: tokenizer, recursive descent, AST and tree traversal via visitors._
@@ -28,17 +28,18 @@ so error messages carry source coordinates.
   [*Module*], [*Responsibility*],
   [`token.c3`], [Token types (`TokenKind`), token value (`Value`), position (`Ref`) and a shared error-formatting helper `format_ref_error`.],
   [`lexer.c3`], [Turns source text into a token stream (`Lexer.next`), tracks `Ref`, and catches unknown characters and integer overflow.],
-  [`ast.c3`], [Tree nodes (`ASTNumber`, `ASTUnary`, `ASTBinary`), the `ASTNode`/`ASTVisitor` interfaces, factories and a demo `ASTestVisitor`.],
-  [`ast_tree.c3`], [The `ASTreeVisitor` visitor + `to_tree` — renders the AST as a tree (in the style of `eza -T`).],
-  [`rpn_visitor.c3`], [The `RPNVisitor` visitor + `to_rpn` — emits reverse Polish notation (`NEG`/`POS` for unary operators).],
-  [`eval_visitor.c3`], [The `EvalVisitor` visitor + `eval` — evaluates the value, returning `Result{int, EvalError}`.],
-  [`parser.c3`], [Recursive descent over the grammar (`parse`), builds the AST, and reports `ParseError` with position.],
-  [`main.c3`], [Entry point: CLI argument parsing, the REPL, file reading and assembling the final output.],
+   [`ast.c3`], [Tree nodes (`ASTNumber`, `ASTUnary`, `ASTBinary`, `ASTIdent`, `ASTLet`, `ASTFunDef`, `ASTCall`), the `ASTNode`/`ASTVisitor` interfaces, factories and a demo `ASTestVisitor`.],
+   [`ast_tree.c3`], [The `ASTreeVisitor` visitor + `to_tree` — renders the AST as a tree (in the style of `eza -T`).],
+   [`rpn_visitor.c3`], [The `RPNVisitor` visitor + `to_rpn` — emits reverse Polish notation (`NEG`/`POS` for unary operators).],
+   [`eval_visitor.c3`], [The `EvalVisitor` visitor + `eval` — evaluates the value, returning `Result{int, EvalError}`; threads a `SymbolTable*`.],
+   [`parser.c3`], [Recursive descent over the grammar (`parse`): arithmetic, `let`, function definition/calls (`fn`), and reports `ParseError` with position.],
+   [`symbol_table.c3`], [Symbol table: the global namespace, call frames for parameters/recursion, storage of variables (`let`) and functions (`fn`), and the built-in `ask()`.],
+   [`main.c3`], [Entry point: CLI argument parsing, the REPL, file reading and assembling the final output.],
 )
 
 == Token representation (`token.c3`)
 
-- `TokenKind` is an enum: `NUMBER`, `PLUS`, `MINUS`, `MUL`, `DIV`, `MOD`, `LPAREN`, `RPAREN`, `EOF`, plus the fault values `UNKNOWN_CHAR`, `OVERFLOW`.
+- `TokenKind` is an enum: `NUMBER`, `IDENT`, `LPAREN`, `RPAREN`, `LBRACE`, `RBRACE`, `COMMA`, `EQ`, `PLUS`, `MINUS`, `MUL`, `DIV`, `MOD`, `EOF`, plus the fault values `UNKNOWN_CHAR`, `OVERFLOW`.
 - `Token` is `{ kind, val: Value, ref: Ref }`, where `Value` is a union (number or character).
 - `Ref` is `{ int row, int col }`, the single source of error coordinates.
 - `format_ref_error(String kind, Ref ref, String msg)` is a shared template,
@@ -54,9 +55,12 @@ so error messages carry source coordinates.
 == AST and the Visitor pattern (`ast.c3`)
 
 - The `ASTNode` interface requires `accept(ASTVisitor)` and `to_format` (for `Printable`).
-- The `ASTVisitor` interface has `visit_number` / `visit_unary` / `visit_binary`.
+- The `ASTVisitor` interface has `visit_number` / `visit_unary` / `visit_binary` /
+  `visit_ident` / `visit_let` / `visit_fundef` / `visit_call`.
 - Nodes: `ASTNumber { ref, value }`, `ASTUnary { ref, op, operand }`,
-  `ASTBinary { ref, op, left, right }`. Each `accept` calls its corresponding `visit_*`.
+  `ASTBinary { ref, op, left, right }`, `ASTIdent { ref, name }`,
+  `ASTLet { ref, name, value }`, `ASTFunDef { ref, name, ret_type, params, body }`,
+  `ASTCall { ref, name, args, argc }`. Each `accept` calls its corresponding `visit_*`.
 - The factories `create_number` / `create_unary` / `create_binary` allocate a node and return it
   as `ASTNode`. `op_symbol` maps an operator `TokenKind` to its symbol.
 - `ASTestVisitor` is a demo visitor that prints node structure (used in a test).
@@ -77,7 +81,9 @@ so the caller does not hold a dangling reference to the visitor's internal buffe
 
 - `parse(String src, Allocator allocator) -> Result{ASTNode, ParseError}` — recursive descent:
   `expression → term → factor → primary`, honoring precedence and associativity,
-  with support for unary `+`/`-` and parentheses.
+  with support for unary `+`/`-` and parentheses. In addition it recognizes
+  `let <name> = <expr>`, function definitions `fn <Type> <name>(<Type> <p>, ...) { <expr> }`
+  and calls `<name>(<arg>, ...)` (including the built-in `ask()`).
 - `ParseError` holds a `Ref` and a message; its `to_format` delegates to
   `token::format_ref_error("ParseError", ...)`.
 
@@ -92,14 +98,33 @@ Two independent error types, each with a `to_format`:
 
 The shared `token::format_ref_error` guarantees a consistent format and the presence of coordinates.
 
+== Symbol table and functions (`symbol_table.c3`)
+
+`SymbolTable` keeps a single global namespace (`global`) and ephemeral call frames for
+parameters and recursion (a fixed array of depth `MAX_CALL_DEPTH = 256`):
+
+- `VarSymbol { int value }` — the variable's value; bound by the `let` instruction at
+  evaluation time in the current scope (rebinding is allowed).
+- `FunctionDef { Type ret_type, Param[16] params, usz param_count, ASTNode body }` — a
+  function definition; `Param { Type type, String name }`; only the `int` type is supported
+  for now.
+- `register_func`, `lookup_func`, `bind_var`, `lookup_var`, `push_call_scope`,
+  `pop_call_scope` — register/lookup functions and variables, and push/pop a call frame
+  on invocation (parameters are bound by value).
+- `ask()` — a built-in: prints `? ` and reads an `int` from stdin.
+
+Recursion is possible because each call lays its own frame with parameters on top of the
+call stack. Functions are **not first-class** yet — they cannot be passed as a value or
+returned from another function.
+
 == Entry point and CLI (`main.c3`)
 
 The `pipeline(String src, Allocator) -> Result{PipelineOk, ParseError}`
 combines `parse` + `to_rpn` + `eval` and returns the node, RPN and result in a single pass.
 On top of it:
 
-- `process_line(src, allocator)` — a short `RPN\nresult` output (used in tests);
-  the input `?` answers `42`.
+- `process_line(src, allocator)` — a short `RPN\nresult` output (used in tests).
+- The built-in `ask()` prints the `? ` prompt and reads an `int` from stdin.
 - `process_to_string(src, allocator)` — the full `AST / RPN / Result` block.
 - `process(src)` — prints the `process_to_string` result inside a pool (`@pool` + `tmem`).
 
@@ -177,5 +202,5 @@ across recursive calls without being passed as a parameter.
 ```
 c3c build calc3      # build (debug)
 c3c build calc3 -O2 -g0   # release
-c3c test calc3       # 74 unit tests (lexer, AST, parser, eval, entry point)
+c3c test calc3       # 92 unit tests (lexer, AST, parser, eval, symbol table, entry point)
 ```
